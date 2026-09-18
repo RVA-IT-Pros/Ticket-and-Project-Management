@@ -304,6 +304,10 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
+    # Security Guard: Block clients from the staff dashboard
+    if current_user.role == "client":
+        return redirect(url_for("client_portal"))
+
     # Custom ordering for status: Open > In Progress > Closed
     tickets = (
         Ticket.query.filter(
@@ -1536,57 +1540,64 @@ def view_edit_company(company_id):
 @app.route("/client/<int:client_id>", methods=["GET", "POST"])
 @login_required
 def view_edit_client(client_id):
+    if current_user.role == "client":
+        return redirect(url_for("client_portal"))
+
     client = Client.query.get_or_404(client_id)
-    form = EditClientForm(obj=client)
+    form = ClientForm(obj=client)
 
-    # Check if this client already has a linked portal User account
+    # Populate dynamic choices before validation to prevent WTForms errors
+    if hasattr(form, "company_id"):
+        form.company_id.choices = [(c.id, c.name) for c in Company.query.all()]
+
+    # Fetch existing user account directly via Foreign Key
     user = User.query.filter_by(client_id=client.id).first()
-    has_portal_access = user is not None  # Boolean flag to pass to the template
 
-    if form.validate_on_submit():
-        # Update client details
-        client.first_name = form.first_name.data
-        client.last_name = form.last_name.data
-        client.email = form.email.data
-        client.phone = form.phone.data
+    if request.method == "POST":
+        # 1. Update basic client record details
+        client.first_name = request.form.get("first_name", client.first_name)
+        client.last_name = request.form.get("last_name", client.last_name)
+        client.email = request.form.get("email", client.email)
+        client.phone = request.form.get("phone", client.phone)
 
-        # Keep the portal login email/username in sync if the client's email changed
-        if user:
-            user.email = form.email.data
-            user.username = form.email.data
+        # 2. Capture raw password input from form post
+        entered_password = request.form.get("password")
 
-        # If a new password was typed into the form
-        if form.password.data:
-            hashed_password = generate_password_hash(
-                form.password.data, method="pbkdf2:sha256"
+        # 3. Create or update user account
+        if entered_password and entered_password.strip():
+            hashed_pw = generate_password_hash(
+                entered_password.strip(), method="pbkdf2:sha256"
             )
-
-            if user:
-                # 1. User exists, just update their password
-                user.password = hashed_password
-            else:
-                # 2. User does not exist, grant them portal access for the first time
+            if not user:
                 user = User(
-                    username=form.email.data,
-                    email=form.email.data,
-                    password=hashed_password,
+                    username=client.email,
+                    email=client.email,
+                    password=hashed_pw,
                     role="client",
                     client_id=client.id,
+                    is_company_admin=(request.form.get("is_company_admin") == "on"),
                 )
                 db.session.add(user)
+            else:
+                user.password = hashed_pw
+                user.email = client.email
+                user.username = client.email
+                user.is_company_admin = request.form.get("is_company_admin") == "on"
+        elif user:
+            # Update permissions if user already has an active portal account
+            user.is_company_admin = request.form.get("is_company_admin") == "on"
 
         db.session.commit()
         flash("Client details updated successfully!", "success")
-        return redirect(url_for("view_edit_client", client_id=client.id))
+        return redirect(url_for("view_edit_company", company_id=client.company_id))
 
-    # Pass 'has_portal_access' to the template
+    has_portal_access = user is not None
     return render_template(
         "view_edit_client.html",
         form=form,
         client=client,
         has_portal_access=has_portal_access,
     )
-
 
 @app.route("/get_client_email", methods=["GET"])
 @login_required
@@ -2072,27 +2083,223 @@ def search_tickets():
 @app.route("/portal")
 @login_required
 def client_portal():
-    # Security check: If a tech or admin tries to go here, send them to the main dashboard
     if current_user.role != "client":
         return redirect(url_for("dashboard"))
 
-    # Get only the tickets requested by this specific client
-    client_tickets = (
-        Ticket.query.filter_by(client_id=current_user.client_id)
-        .order_by(
-            db.case(
-                (Ticket.status == "Open", 1),
-                (Ticket.status == "In Progress", 2),
-                (Ticket.status == "Touched", 3),
-                (Ticket.status == "On Hold", 4),
-                (Ticket.status == "Closed", 5),
-            ).asc(),
-            Ticket.updated_at.desc(),
+    # Check if user is a Company Leader/Admin
+    is_company_admin = current_user.is_company_admin
+
+    # 1. Ticket Access Control
+    if is_company_admin and current_user.client and current_user.client.company_id:
+        # Company Admins see all tickets for their company
+        client_tickets = (
+            Ticket.query.join(Client)
+            .filter(Client.company_id == current_user.client.company_id)
+            .order_by(Ticket.updated_at.desc())
+            .all()
         )
+    else:
+        # Standard Clients see only their own tickets
+        client_tickets = (
+            Ticket.query.filter_by(user_id=current_user.id)
+            .order_by(Ticket.updated_at.desc())
+            .all()
+        )
+
+# 2. Project Visibility Control
+    company_projects = []
+    if current_user.client and current_user.client.company_id:
+        if is_company_admin:
+            # Company Admins see ALL company projects (Active & Closed)
+            company_projects = Project.query.filter_by(
+                company_id=current_user.client.company_id
+            ).all()
+        else:
+            # Standard Clients see only active projects explicitly shared with them
+            company_projects = current_user.shared_projects.filter(Project.status != "Closed").all()
+
+    return render_template(
+        "client_portal.html",
+        tickets=client_tickets,
+        projects=company_projects,
+        is_company_admin=is_company_admin,
+    )
+
+@app.route("/portal/ticket/<int:id>", methods=["GET", "POST"])
+@login_required
+def portal_view_ticket(id):
+    if current_user.role != "client":
+        return redirect(url_for("dashboard"))
+
+    ticket = Ticket.query.get_or_404(id)
+
+    # Permission Check
+    user_owns_ticket = ticket.user_id == current_user.id
+    client_owns_ticket = (current_user.client_id and ticket.client_id == current_user.client_id)
+    
+    is_company_admin = getattr(current_user, "is_company_admin", False)
+    same_company = (
+        current_user.client 
+        and ticket.client 
+        and current_user.client.company_id == ticket.client.company_id
+    )
+    is_authorized_admin = is_company_admin and same_company
+
+    if not (user_owns_ticket or client_owns_ticket or is_authorized_admin):
+        flash("You do not have permission to view this ticket.", "danger")
+        return redirect(url_for("client_portal"))
+
+    note_form = AddNoteForm()
+
+    if request.method == "POST" and note_form.validate_on_submit():
+        note = TicketNote(
+            content=note_form.content.data,
+            ticket_id=ticket.id,
+            user_id=current_user.id,
+            note_start_time=datetime.now(UTC),
+            note_finish_time=datetime.now(UTC),
+        )
+        db.session.add(note)
+        db.session.commit()
+        flash("Comment added successfully!", "success")
+        return redirect(url_for("portal_view_ticket", id=ticket.id))
+
+    # Smart Back Navigation URL
+    if ticket.project_id:
+        back_url = url_for("portal_view_project", project_id=ticket.project_id)
+    else:
+        back_url = url_for("client_portal")
+
+    return render_template(
+        "portal_view_ticket.html", 
+        ticket=ticket, 
+        note_form=note_form, 
+        back_url=back_url
+    )
+
+    
+@app.route("/portal/ticket/new", methods=["GET", "POST"])
+@login_required
+def portal_new_ticket():
+    if current_user.role != "client":
+        return redirect(url_for("dashboard"))
+
+    form = TicketForm()
+    
+    # Pre-fill client options
+    form.client_id.choices = [(current_user.client_id, f"{current_user.client.first_name} {current_user.client.last_name}")] if current_user.client else []
+    form.assigned_tech_id.choices = [(0, "Unassigned")]
+    form.phase_id.choices = [(0, "No Project Assigned")]
+
+    if request.method == "POST":
+        ticket = Ticket(
+            subject=request.form.get("subject"),
+            description=request.form.get("description"),
+            priority=request.form.get("priority", "Medium"),
+            status="Open",
+            user_id=current_user.id,
+            client_id=current_user.client_id,
+            requestor_email=current_user.email,
+        )
+        db.session.add(ticket)
+        db.session.commit()
+        
+        # Send Email Notification to newticket@rvaitpros.com
+        notification_email = app.config.get("NEWTICKET_EMAIL") or "newticket@rvaitpros.com"
+        client_name = f"{current_user.client.first_name} {current_user.client.last_name}" if current_user.client else current_user.username
+        company_name = current_user.client.company.name if (current_user.client and current_user.client.company) else "N/A"
+        
+        email_subject = f"[Portal Ticket #{ticket.id}] {ticket.subject}"
+        email_body = f"""
+        <html>
+        <body>
+            <h3>New Portal Support Ticket Created</h3>
+            <p><strong>Ticket ID:</strong> #{ticket.id}</p>
+            <p><strong>Created By:</strong> {client_name} ({company_name})</p>
+            <p><strong>Requestor Email:</strong> {ticket.requestor_email}</p>
+            <p><strong>Priority:</strong> {ticket.priority}</p>
+            <p><strong>Subject:</strong> {ticket.subject}</p>
+            <p><strong>Description:</strong></p>
+            <div style="background-color: #f8f9fa; padding: 12px; border-left: 4px solid #0d6efd;">
+                {md.convert(ticket.description or '')}
+            </div>
+        </body>
+        </html>
+        """
+        try:
+            send_gmail_message(to=notification_email, subject=email_subject, html_body=email_body)
+        except Exception as e:
+            print(f"Error sending portal ticket notification email: {e}")
+
+        flash("Support ticket created successfully!", "success")
+        return redirect(url_for("client_portal"))
+
+    return render_template("portal_new_ticket.html", form=form)
+
+@app.route("/portal/project/<int:project_id>")
+@login_required
+def portal_view_project(project_id):
+    if current_user.role != "client":
+        return redirect(url_for("dashboard"))
+
+    project = Project.query.get_or_404(project_id)
+
+    # Permission Check
+    is_admin = getattr(current_user, "is_company_admin", False)
+    is_shared = current_user in project.shared_users
+    same_company = (
+        current_user.client 
+        and project.company_id == current_user.client.company_id
+    )
+
+    if not (same_company and (is_admin or is_shared)):
+        flash("You do not have permission to view this project.", "danger")
+        return redirect(url_for("client_portal"))
+
+    # Pass all phases to Company Admins, but filter for standard shared clients
+    if is_admin:
+        visible_phases = project.phases
+    else:
+        visible_phases = [p for p in project.phases if current_user in p.shared_users]
+
+    return render_template(
+        "portal_view_project.html", 
+        project=project, 
+        phases=visible_phases
+    )
+
+
+@app.route("/project/<int:project_id>/share", methods=["GET", "POST"])
+@login_required
+def share_project(project_id):
+    if current_user.role == "client":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    project = Project.query.get_or_404(project_id)
+    company_users = (
+        User.query.join(Client)
+        .filter(Client.company_id == project.company_id)
         .all()
     )
 
-    return render_template("client_portal.html", tickets=client_tickets)
+    if request.method == "POST":
+        # 1. Update Project-Level Sharing
+        selected_user_ids = [int(uid) for uid in request.form.getlist("shared_user_ids")]
+        project.shared_users = [u for u in company_users if u.id in selected_user_ids]
+
+        # 2. Update Phase-Level Sharing
+        for phase in project.phases:
+            phase_user_ids = [int(uid) for uid in request.form.getlist(f"phase_{phase.id}_users")]
+            phase.shared_users = [u for u in company_users if u.id in phase_user_ids]
+
+        db.session.commit()
+        flash(f"Permissions for {project.name} updated successfully!", "success")
+        
+        # STAY ON PERMISSIONS PAGE: Redirect back to share_project instead of project_dashboard
+        return redirect(url_for("share_project", project_id=project.id))
+
+    return render_template("share_project.html", project=project, company_users=company_users)
 
 
 def get_qbo_auth_client():

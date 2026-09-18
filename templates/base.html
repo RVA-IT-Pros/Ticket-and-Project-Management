@@ -46,21 +46,31 @@
   <!-- /.navbar -->
 
   <!-- Main Sidebar Container -->
-  <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo -->
-    <a href="{{ url_for('dashboard') }}" class="brand-link">
-      {% if BRAND_LOGO_PATH %}
-        <img src="{{ BRAND_LOGO_PATH }}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-      {% endif %}
-      <span class="brand-text font-weight-light">{{ BRAND_NAME or "IT Helpdesk" }}</span>
-    </a>
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+  <!-- Brand Logo -->
+  <a href="{% if current_user.role == 'client' %}{{ url_for('client_portal') }}{% else %}{{ url_for('dashboard') }}{% endif %}" class="brand-link">
+    {% if BRAND_LOGO_PATH %}
+      <img src="{{ BRAND_LOGO_PATH }}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+    {% endif %}
+    <span class="brand-text font-weight-light">{{ BRAND_NAME or "IT Helpdesk" }}</span>
+  </a>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- Sidebar Menu -->
-      <nav class="mt-2">
-        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-          
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <nav class="mt-2">
+      <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+        
+        <!-- CLIENT SIDEBAR MENU -->
+        {% if current_user.role == 'client' %}
+          <li class="nav-item">
+            <a href="{{ url_for('client_portal') }}" class="nav-link">
+              <i class="nav-icon fas fa-ticket-alt"></i>
+              <p>My Tickets</p>
+            </a>
+          </li>
+
+        <!-- STAFF & ADMIN SIDEBAR MENU -->
+        {% else %}
           <li class="nav-item">
             <a href="{{ url_for('project_or_regular') }}" class="nav-link bg-success">
               <i class="nav-icon fas fa-plus"></i>
@@ -135,11 +145,12 @@
               </a>
             </li>
           {% endif %}
+        {% endif %}
 
-        </ul>
-      </nav>
-    </div>
-  </aside>
+      </ul>
+    </nav>
+  </div>
+</aside>
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">

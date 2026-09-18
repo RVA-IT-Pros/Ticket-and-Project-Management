@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket #{{ ticket.id }} - {{ COMPANY_NAME }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body { background-color: #f8f9fa; }
+        .portal-container { margin-top: 40px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .note-card { background-color: #f1f3f5; border-left: 4px solid #0d6efd; }
+    </style>
+</head>
+<body>
+    <div class="container portal-container mb-5">
+        <!-- Smart Context-Aware Back Navigation Button -->
+        <div class="mb-3">
+            <a href="{{ back_url }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> 
+                {% if ticket.project_id %}
+                    Back to Project
+                {% else %}
+                    Back to Portal
+                {% endif %}
+            </a>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Ticket Header -->
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+            <h3 class="m-0">#{{ ticket.id }} - {{ ticket.subject }}</h3>
+            <div>
+                {% if ticket.status == 'Closed' %}
+                    <span class="badge bg-success p-2">Closed</span>
+                {% elif ticket.status == 'In Progress' or ticket.status == 'Touched' %}
+                    <span class="badge bg-primary p-2">In Progress</span>
+                {% else %}
+                    <span class="badge bg-secondary p-2">{{ ticket.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Meta Information -->
+        <div class="text-muted small mb-4">
+            <span><i class="far fa-calendar-alt me-1"></i>Created: {{ ticket.created_at.strftime('%b %d, %Y') if ticket.created_at else 'N/A' }}</span>
+            {% if ticket.project %}
+                <span class="ms-3"><i class="fas fa-project-diagram me-1"></i>Project: <strong>{{ ticket.project.name }}</strong></span>
+            {% endif %}
+        </div>
+
+        <!-- Ticket Description -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-dark text-white fw-bold">Description</div>
+            <div class="card-body">
+                <div class="card-text">{{ (ticket.description | markdown | safe) if ticket.description else 'No description provided.' }}</div>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- Ticket Comments / Notes History -->
+        <h5 class="mb-3"><i class="fas fa-comments me-2"></i>Updates & Notes</h5>
+        {% if ticket.notes %}
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for note in ticket.notes %}
+                    <div class="card note-card p-3 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-primary">{{ note.user.username if note.user else 'Support Tech' }}</span>
+                            <small class="text-muted">{{ note.created_at.strftime('%b %d, %Y %I:%M %p') if note.created_at else '' }}</small>
+                        </div>
+                        <div>{{ note.content | markdown | safe }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-light border text-muted mb-4">No public notes or updates recorded on this ticket yet.</div>
+        {% endif %}
+
+        <!-- Add Comment Form -->
+        {% if ticket.status != 'Closed' %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-bold">Add a Response</div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ note_form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ note_form.content(class="form-control", rows=4, placeholder="Type your comment or update here...") }}
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i> Submit Response</button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">This ticket is closed. Reopen or create a new ticket if you need further assistance.</div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

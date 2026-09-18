@@ -3,44 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Dashboard</title>
+    <title>Project Dashboard - {{ project.name }}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- Flash messages for success or errors -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-{{ messages[0][0] }} d-flex align-items-center fade show" role="alert"">
-                {{ messages[0][1] }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endif %}
-    {% endwith %}
     <div class="container mt-5">
+        <!-- Flash messages for success or errors -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert alert-{{ messages[0][0] }} alert-dismissible fade show mb-4" role="alert">
+                    {{ messages[0][1] }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <h2>Project: {{ project.name }}</h2>
         <p>{{ project.description }}</p>
-        <p>Status: {{ project.status }}</p>
-        <p>Company: {{ project.company.name }}</p>
-
-    <!-- Flash messages for success or errors -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-{{ messages[0][0] }} d-flex align-items-center fade show" role="alert"">
-                {{ messages[0][1] }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endif %}
-    {% endwith %}
+        <p><strong>Status:</strong> {{ project.status }}</p>
+        <p><strong>Company:</strong> {{ project.company.name }}</p>
 
         <!-- Action Buttons -->
         <div class="mb-4">
-            <a href="{{ url_for('create_phase', project_id=project.id) }}" class="btn btn-secondary">Create Phase</a>
-            <a href="{{ url_for('new_ticket', project_id=project.id) }}" class="btn btn-primary">Create Ticket</a>
-            <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-warning">Edit Project</a>
-            <a href="{{ url_for('projects_home') }}" class="btn btn-secondary">Return to Dashboard</a>
-            <a href="{{ url_for('download_project_excel', project_id=project.id) }}" class="btn btn-success">Download Excel</a>
+            <a href="{{ url_for('create_phase', project_id=project.id) }}" class="btn btn-secondary"><i class="fas fa-plus me-1"></i> Create Phase</a>
+            <a href="{{ url_for('new_ticket', project_id=project.id) }}" class="btn btn-primary"><i class="fas fa-ticket-alt me-1"></i> Create Ticket</a>
+            <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-warning"><i class="fas fa-edit me-1"></i> Edit Project</a>
+            <a href="{{ url_for('share_project', project_id=project.id) }}" class="btn btn-info"><i class="fas fa-user-plus me-1"></i> Manage Client Access</a>
+            <a href="{{ url_for('projects_home') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Return to Dashboard</a>
+            <a href="{{ url_for('download_project_excel', project_id=project.id) }}" class="btn btn-success"><i class="fas fa-file-excel me-1"></i> Download Excel</a>
         </div>
     
         {% set ns_project = namespace(estimated=0, actual=0) %}
@@ -78,7 +72,7 @@
         {% if project.phases %}
             <ul class="list-group">
                 {% for phase in project.phases %}
-                <li class="list-group-item">
+                <li class="list-group-item mb-3">
                     {% set ns_phase = namespace(estimated=0, actual=0) %}
                     
                     {% for ticket in phase.tickets %}
@@ -98,10 +92,10 @@
                     
                     {% set remaining_hours = ns_phase.estimated - ns_phase.actual %}
                     
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4>{{ phase.name }} - {{ phase.status }}</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h4 class="m-0">{{ phase.name }} - <span class="badge bg-secondary">{{ phase.status }}</span></h4>
                         <div>
-                            <strong>Estimated: {{ ns_phase.estimated | round(2) }} / Actual: {{ ns_phase.actual | round(2) }} / Remaining: {{ remaining_hours | round(2) }} hrs</strong>
+                            <small class="text-muted fw-bold">Estimated: {{ ns_phase.estimated | round(2) }} / Actual: {{ ns_phase.actual | round(2) }} / Remaining: {{ remaining_hours | round(2) }} hrs</small>
                         </div>
                         <div>
                             <a href="{{ url_for('edit_phase', id=phase.id) }}" class="btn btn-warning btn-sm">Edit Phase</a>
@@ -113,29 +107,28 @@
                         {% for ticket in phase.tickets %}
                         <li class="list-group-item">
                             <a href="{{ url_for('view_ticket', id=ticket.id) }}" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">
-                                <strong>{{ ticket.subject }}</strong> - {{ ticket.status }} (Priority: {{ ticket.priority }})
+                                <strong>#{{ ticket.id }} - {{ ticket.subject }}</strong> - {{ ticket.status }} (Priority: {{ ticket.priority }})
                             </a>
                 
-                            {% set ns = namespace(seconds=0) %}
                             {% if ticket.billable == 'R' %}
-                            {% set ns = namespace(seconds=0) %}
-                            {% for note in ticket.notes %}
-                                {% if note.note_start_time and note.note_finish_time %}
-                                    {% set delta = (note.note_finish_time - note.note_start_time).total_seconds() %}
-                                    {% set ns.seconds = ns.seconds + delta %}
-                                {% endif %}
-                            {% endfor %}
-                            {% set actual = (ns.seconds / 3600) %}
-                            {% set remaining = ticket.estimated_hours - actual %}
-                            <div class="text-muted small">
-                                Est: {{ ticket.estimated_hours | round(2) }} hrs — 
-                                Act: {{ actual | round(2) }} hrs — 
-                                Rem: {{ remaining | round(2) }} hrs — 
-                                Billable
-                            </div>
-                        {% else %}
-                            <div class="text-muted small">Not Billable</div>
-                        {% endif %}
+                                {% set ns = namespace(seconds=0) %}
+                                {% for note in ticket.notes %}
+                                    {% if note.note_start_time and note.note_finish_time %}
+                                        {% set delta = (note.note_finish_time - note.note_start_time).total_seconds() %}
+                                        {% set ns.seconds = ns.seconds + delta %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% set actual = (ns.seconds / 3600) %}
+                                {% set remaining = ticket.estimated_hours - actual %}
+                                <div class="text-muted small">
+                                    Est: {{ ticket.estimated_hours | round(2) }} hrs — 
+                                    Act: {{ actual | round(2) }} hrs — 
+                                    Rem: {{ remaining | round(2) }} hrs — 
+                                    Billable
+                                </div>
+                            {% else %}
+                                <div class="text-muted small">Not Billable</div>
+                            {% endif %}
                         </li>
                         {% endfor %}
                     </ul>

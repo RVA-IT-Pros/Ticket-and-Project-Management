@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Share Project Permissions - {{ project.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body { background-color: #f8f9fa; }
+        .permission-container {
+            margin-top: 40px;
+            margin-bottom: 50px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .user-card { transition: all 0.2s ease-in-out; }
+        .caret-btn {
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .caret-btn:hover { color: #0d6efd; }
+        .caret-btn.collapsed .fa-chevron-down { transform: rotate(-90deg); }
+        .caret-btn .fa-chevron-down { transition: transform 0.2s ease-in-out; }
+    </style>
+</head>
+<body>
+    <div class="container permission-container">
+        <!-- Back Navigation Button -->
+        <div class="mb-3">
+            <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Back to Project Dashboard
+            </a>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="fas fa-user-shield me-2 text-primary"></i>Manage Permissions</h2>
+            <span class="badge bg-secondary fs-6">{{ project.name }}</span>
+        </div>
+        <p class="text-muted">
+            Configure overall project access and specific phase visibility for employees of <strong>{{ project.company.name }}</strong>.
+        </p>
+
+        <hr class="mb-4" />
+
+        <form method="POST">
+            {% if company_users %}
+                <div class="row g-3">
+                    {% for user in company_users %}
+                    <div class="col-12">
+                        <div class="card user-card shadow-sm border">
+                            <!-- User Main Row -->
+                            <div class="card-body p-3 bg-light d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <!-- Main Project Checkbox -->
+                                    <div class="form-check me-3">
+                                        <input 
+                                            class="form-check-input project-checkbox" 
+                                            type="checkbox" 
+                                            name="shared_user_ids" 
+                                            value="{{ user.id }}" 
+                                            id="proj_user_{{ user.id }}"
+                                            {% if user in project.shared_users %}checked{% endif %}
+                                            data-user-id="{{ user.id }}"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="form-check-label fw-bold text-dark m-0" for="proj_user_{{ user.id }}">
+                                            {{ user.client.first_name if user.client else '' }} {{ user.client.last_name if user.client else user.username }}
+                                        </label>
+                                        <div class="small text-muted">{{ user.email }}</div>
+                                    </div>
+                                </div>
+
+                                <!-- Phase Toggle Caret Button -->
+                                {% if project.phases %}
+                                <div>
+                                    <button 
+                                        type="button" 
+                                        class="caret-btn btn-sm d-flex align-items-center gap-1 {% if not (user in project.shared_users) %}collapsed{% endif %}" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#userPhases{{ user.id }}" 
+                                        aria-expanded="{% if user in project.shared_users %}true{% else %}false{% endif %}"
+                                    >
+                                        <small class="fw-bold">Phase Permissions</small>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Collapsible Phase Section Under User -->
+                            {% if project.phases %}
+                            <div class="collapse {% if user in project.shared_users %}show{% endif %}" id="userPhases{{ user.id }}">
+                                <div class="card-footer bg-white p-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-bold text-secondary"><i class="fas fa-tasks me-1"></i>Accessible Phases:</span>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none select-all-btn" data-user-id="{{ user.id }}">
+                                            Select All Phases
+                                        </button>
+                                    </div>
+                                    <div class="row g-2">
+                                        {% for phase in project.phases %}
+                                        <div class="col-md-4 col-sm-6">
+                                            <div class="form-check p-2 border rounded bg-light">
+                                                <input 
+                                                    class="form-check-input phase-checkbox-{{ user.id }} ms-1 me-2" 
+                                                    type="checkbox" 
+                                                    name="phase_{{ phase.id }}_users" 
+                                                    value="{{ user.id }}" 
+                                                    id="p_{{ phase.id }}_u_{{ user.id }}"
+                                                    {% if user in phase.shared_users %}checked{% endif %}
+                                                >
+                                                <label class="form-check-label small fw-bold" for="p_{{ phase.id }}_u_{{ user.id }}">
+                                                    {{ phase.name }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">No client user accounts found for this company.</div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i> Save Permissions
+                </button>
+                <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // "Select All Phases" toggle functionality per user
+            document.querySelectorAll('.select-all-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const checkboxes = document.querySelectorAll(`.phase-checkbox-${userId}`);
+                    
+                    // Determine if all are currently checked
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                    
+                    // Toggle all checkboxes
+                    checkboxes.forEach(cb => cb.checked = !allChecked);
+                    this.textContent = allChecked ? 'Select All Phases' : 'Deselect All Phases';
+                });
+            });
+
+            // Automatically expand phase dropdown if user project checkbox is checked
+            document.querySelectorAll('.project-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const targetCollapse = document.getElementById(`userPhases${userId}`);
+                    if (targetCollapse) {
+                        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(targetCollapse);
+                        if (this.checked) {
+                            bsCollapse.show();
+                        } else {
+                            bsCollapse.hide();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
