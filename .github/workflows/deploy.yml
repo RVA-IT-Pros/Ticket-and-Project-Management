@@ -1,0 +1,30 @@
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: SSH and Pull Latest Code on PythonAnywhere
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: andrewbean94
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/andrewbean94/Ticket-and-Project-Management
+            git pull origin main
+
+      - name: Reload PythonAnywhere Web App
+        run: |
+          curl -X POST \
+            -H "Authorization: Token ${{ secrets.PYTHON_ANYWHERE_API_TOKEN }}" \
+            "https://www.pythonanywhere.com/api/v0/user/andrewbean94/webapps/andrewbean94.pythonanywhere.com/reload/"
