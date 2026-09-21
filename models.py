@@ -152,6 +152,11 @@ class Ticket(db.Model):
     assigned_tech = db.relationship("User", foreign_keys=[assigned_tech_id])
     notes = db.relationship("TicketNote", backref="ticket", lazy=True, cascade="all, delete-orphan")
 
+    gmail_message_id = db.Column(db.String(128), nullable=True)
+
+    client = db.relationship("Client", back_populates="tickets")
+    project = db.relationship("Project", back_populates="tickets")
+    phase = db.relationship("Phase", back_populates="tickets")
 
 class TicketNote(db.Model):
     __tablename__ = "ticket_note"
