@@ -103,7 +103,7 @@ class Project(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey("company.id"), nullable=False)
 
     phases = db.relationship("Phase", backref="project", lazy=True, cascade="all, delete-orphan")
-    tickets = db.relationship("Ticket", backref="project", lazy=True)
+    tickets = db.relationship("Ticket", back_populates="project")
 
 
 class Phase(db.Model):
@@ -114,7 +114,7 @@ class Phase(db.Model):
     status = db.Column(db.String(50), default="Open")
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"), nullable=False)
 
-    tickets = db.relationship("Ticket", backref="phase", lazy=True)
+    tickets = db.relationship("Ticket", back_populates="phase")
 
 
 class Ticket(db.Model):
