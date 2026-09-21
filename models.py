@@ -87,7 +87,7 @@ class Client(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey("company.id"), nullable=False)
 
     user_account = db.relationship("User", backref="client", lazy=True)
-    tickets = db.relationship("Ticket", backref="client", lazy=True)
+    tickets = db.relationship("Ticket", back_populates="client")
 
 
 # ---------------------------------------------------------------------------
