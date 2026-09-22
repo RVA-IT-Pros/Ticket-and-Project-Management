@@ -138,7 +138,7 @@ def create_ticket_from_email(sender_email, subject, body, gmail_message_id=None)
             requestor_email=sender_email,
             cc_emails=None,
             due_date=today,  # Set due_date to today
-            estimated_hours=None,
+            estimated_hours=0.5,
             created_at=datetime.now(UTC),
             gmail_message_id=gmail_message_id  # Store Gmail message ID
         )
