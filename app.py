@@ -2200,6 +2200,7 @@ def portal_new_ticket():
             user_id=current_user.id,
             client_id=current_user.client_id,
             requestor_email=current_user.email,
+            estimated_hours=0.5
         )
         db.session.add(ticket)
         db.session.commit()
