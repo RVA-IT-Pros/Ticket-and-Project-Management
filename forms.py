@@ -88,6 +88,7 @@ class TicketForm(FlaskForm):
     due_date = DateField("Due Date", format="%Y-%m-%d", validators=[Optional()])
     estimated_hours = FloatField(
         "Estimated Hours",
+        default=0.5,
         validators=[
             Optional(),
             NumberRange(min=0, message="Estimated hours must be positive"),
@@ -131,6 +132,7 @@ class UpdateTicketForm(FlaskForm):
     due_date = DateField("Due Date", format="%Y-%m-%d", validators=[Optional()])
     estimated_hours = FloatField(
         "Estimated Hours",
+        default=0.5,
         validators=[
             Optional(),
             NumberRange(min=0, message="Estimated hours must be positive"),

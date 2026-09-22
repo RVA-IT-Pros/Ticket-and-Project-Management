@@ -129,7 +129,7 @@ class Ticket(db.Model):
     qbo_invoice_id = db.Column(db.String(50), nullable=True)
 
     due_date = db.Column(db.DateTime, nullable=True)
-    estimated_hours = db.Column(db.Float, nullable=True)
+    estimated_hours = db.Column(db.Float, nullable=True, default=0.5)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
