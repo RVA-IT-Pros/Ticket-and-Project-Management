@@ -496,7 +496,7 @@ def new_ticket():
             requestor_email=form.requestor_email.data,  # Add requestor email
             cc_emails=form.cc_emails.data,  # Add CC emails
             due_date=form.due_date.data,
-            estimated_hours=form.estimated_hours.data,
+            estimated_hours=form.estimated_hours.data if form.estimated_hours.data is not None else 0.5,
         )
         db.session.add(ticket)
         db.session.commit()
