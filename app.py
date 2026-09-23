@@ -2047,9 +2047,11 @@ def search_tickets():
     if q:
         like = f"%{q}%"
         id_filter = []
-        if q.isdigit():
-            # numeric search matches ID exactly, but still OR with the fuzzy fields
-            id_filter = [Ticket.id == int(q)]
+        clean_q = q.lstrip("#")
+        if clean_q.isdigit():
+           # numeric search matches ID exactly, but still OR with the fuzzy fields
+            id_num = int(clean_q)
+            id_filter = [Ticket.id == id_num, Ticket.project_id == id_num]
 
         tickets = (
             Ticket.query.filter(

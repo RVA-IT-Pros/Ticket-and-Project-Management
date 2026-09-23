@@ -160,6 +160,9 @@
                                     {% if ticket.due_date %}
                                     | <span><strong>Due:</strong> {{ ticket.due_date | ymd }}</span>
                                     {% endif %}
+                                    {% if ticket.project %}
+                                    | <span><strong>Project:</strong> {{ ticket.project.name }} #{{ ticket.project.id }}</span>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td class="align-middle text-center ticket-time">
@@ -302,6 +305,61 @@
         });
     }
 
+    function searchTicket() {
+        const rawinput = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
+        if (!input) {
+            alert("Please enter a ticket number, name, subject, or project.");
+            return;
+        }
+
+        document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
+
+        let found = false;
+        document.querySelectorAll(".ticket-item").forEach(item => {
+            const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+            const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
+
+            if (idText.includes(cleanInput) || userText.includes(cleanInput) || detailsText.includes(cleanInput) || contextText.includes(cleanInput) || contextText.includes(rawInput){
+                item.classList.add("highlight");
+                item.scrollIntoView({ behavior: "smooth", block: "center" });
+                found = true;
+            }
+        });
+
+        if (!found) {
+            alert("Ticket not found.");
+        }
+    }
+
+    // --- Dynamic Counter Logic ---
+    function updateTicketCounts() {
+        const visibleRows = Array.from(document.querySelectorAll('.ticket-item')).filter(row => row.style.display !== 'none');
+        const selectedCount = visibleRows.filter(row => {
+            const cb = row.querySelector('.ticket-select-checkbox');
+            return cb && cb.checked;
+        }).length;
+
+        // Update Visible Tickets Counter Badge
+        const countBadge = document.getElementById('ticketCountBadge');
+        if (countBadge) {
+            countBadge.textContent = `${visibleRows.length} Ticket${visibleRows.length === 1 ? '' : 's'}`;
+        }
+
+        // Update Selected Checkboxes Badge
+        const selectedBadge = document.getElementById('selectedCountBadge');
+        if (selectedBadge) {
+            if (selectedCount > 0) {
+                selectedBadge.textContent = `${selectedCount} Selected`;
+                selectedBadge.classList.remove('d-none');
+            } else {
+                selectedBadge.classList.add('d-none');
+            }
+        }
+    }
+
+    // Event listeners on load
     document.addEventListener("DOMContentLoaded", function () {
         const savedTech = localStorage.getItem("dashboard_tech_filter");
         const savedStatus = localStorage.getItem("dashboard_status_filter");

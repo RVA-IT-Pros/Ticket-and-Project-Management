@@ -23,7 +23,7 @@
     <ul class="list-group mt-4">
         {% for project in projects %}
         <li class="list-group-item">
-            <a href="{{ url_for('project_dashboard', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}
+            <a href="{{ url_for('project_dashboard', project_id=project.id) }}">{{ project.name }} #{{ project.id }}</a> - {{ project.description or 'No description provided.' }}
         </li>
         {% endfor %}
     </ul>
