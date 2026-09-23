@@ -15,81 +15,93 @@
         </div>
     </div>
 
-    <div class="card card-outline card-primary shadow-sm">
-        <div class="card-header bg-white">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2" style="gap: 10px;">
-                <!-- Filters Section -->
-                <div class="d-flex flex-wrap align-items-center gap-2" style="gap: 10px;">
-                    <!-- Search Box -->
-                    <div class="input-group input-group-sm" style="max-width: 220px;">
-                        <input type="text" id="ticketSearchInput" placeholder="Search #, name, subject" class="form-control">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="button" onclick="searchTicket()">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tech Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 180px;">
-                        <div class="input-group-prepend">
-                            <label class="input-group-text bg-light" for="techFilterSelect"><i class="fas fa-user-tag mr-1"></i> Tech</label>
-                        </div>
-                        <select id="techFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
-                            <option value="all" selected>All Technicians</option>
-                            <option value="unassigned">Unassigned</option>
-                            {% set tech_list = [] %}
-                            {% for ticket in tickets %}
-                                {% if ticket.assigned_tech and ticket.assigned_tech.username not in tech_list %}
-                                    {% set _ = tech_list.append(ticket.assigned_tech.username) %}
-                                    <option value="{{ ticket.assigned_tech.username }}">{{ ticket.assigned_tech.username }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Status Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 170px;">
-                        <div class="input-group-prepend">
-                            <label class="input-group-text bg-light" for="statusFilterSelect"><i class="fas fa-filter mr-1"></i> Status</label>
-                        </div>
-                        <select id="statusFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
-                            <option value="all">All Statuses</option>
-                            <option value="hide_closed">Hide Closed</option>
-                            <option value="open">Open</option>
-                            <option value="in progress">In Progress</option>
-                            <option value="touched">Touched</option>
-                            <option value="on hold">On Hold</option>
-                            <option value="closed">Closed</option>
-                        </select>
-                    </div>
-
-                    <!-- Due Date Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 180px;">
-                        <div class="input-group-prepend">
-                            <label class="input-group-text bg-light" for="dateFilterSelect"><i class="fas fa-calendar-alt mr-1"></i> Due</label>
-                        </div>
-                        <select id="dateFilterSelect" class="custom-select custom-select-sm" onchange="toggleCustomDateInputs(); applyFilters();">
-                            <option value="all" selected>All Dates</option>
-                            <option value="today">Due Today</option>
-                            <option value="tomorrow">Due Tomorrow</option>
-                            <option value="next_7_days">Next 7 Days</option>
-                            <option value="overdue">Past Due</option>
-                            <option value="custom">Custom Range</option>
-                            <option value="none">No Due Date</option>
-                        </select>
-                    </div>
-
-                    <!-- Custom Date Inputs -->
-                    <div id="customDateContainer" class="d-none align-items-center" style="gap: 5px;">
-                        <input type="date" id="customStartDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
-                        <span class="small text-muted">to</span>
-                        <input type="date" id="customEndDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+<div class="card card-outline card-primary shadow-sm">
+    <div class="card-header bg-white">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2" style="gap: 10px;">
+            <!-- Filters Section (Left) -->
+            <div class="d-flex flex-wrap align-items-center gap-2" style="gap: 10px;">
+                <!-- Search Box -->
+                <div class="input-group input-group-sm" style="max-width: 220px;">
+                    <input type="text" id="ticketSearchInput" placeholder="Search #, name, subject" class="form-control">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="button" onclick="searchTicket()">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </div>
 
+                <!-- Tech Filter -->
+                <div class="input-group input-group-sm" style="max-width: 180px;">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text bg-light" for="techFilterSelect"><i class="fas fa-user-tag mr-1"></i> Tech</label>
+                    </div>
+                    <select id="techFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
+                        <option value="all" selected>All Technicians</option>
+                        <option value="unassigned">Unassigned</option>
+                        {% set tech_list = [] %}
+                        {% for ticket in tickets %}
+                            {% if ticket.assigned_tech and ticket.assigned_tech.username not in tech_list %}
+                                {% set _ = tech_list.append(ticket.assigned_tech.username) %}
+                                <option value="{{ ticket.assigned_tech.username }}">{{ ticket.assigned_tech.username }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="input-group input-group-sm" style="max-width: 170px;">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text bg-light" for="statusFilterSelect"><i class="fas fa-filter mr-1"></i> Status</label>
+                    </div>
+                    <select id="statusFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
+                        <option value="all">All Statuses</option>
+                        <option value="hide_closed">Hide Closed</option>
+                        <option value="open">Open</option>
+                        <option value="in progress">In Progress</option>
+                        <option value="touched">Touched</option>
+                        <option value="on hold">On Hold</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+
+                <!-- Due Date Filter -->
+                <div class="input-group input-group-sm" style="max-width: 180px;">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text bg-light" for="dateFilterSelect"><i class="fas fa-calendar-alt mr-1"></i> Due</label>
+                    </div>
+                    <select id="dateFilterSelect" class="custom-select custom-select-sm" onchange="toggleCustomDateInputs(); applyFilters();">
+                        <option value="all" selected>All Dates</option>
+                        <option value="today">Due Today</option>
+                        <option value="tomorrow">Due Tomorrow</option>
+                        <option value="next_7_days">Next 7 Days</option>
+                        <option value="overdue">Past Due</option>
+                        <option value="custom">Custom Range</option>
+                        <option value="none">No Due Date</option>
+                    </select>
+                </div>
+
+                <!-- Custom Date Inputs -->
+                <div id="customDateContainer" class="d-none align-items-center" style="gap: 5px;">
+                    <input type="date" id="customStartDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+                    <span class="small text-muted">to</span>
+                    <input type="date" id="customEndDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+                </div>
+            </div>
+
+            <!-- Right Toolbar Section (Count Badges + Assign To Control) -->
+            <div class="d-flex align-items-center ml-auto gap-2" style="gap: 10px;">
+                <!-- Matching Ticket Count Badge -->
+                <span class="badge badge-info p-2 font-weight-bold" id="ticketCountBadge" style="font-size: 0.85rem;">
+                    0 Tickets
+                </span>
+
+                <!-- Selected Checkbox Count Badge (Hidden by default until items are checked) -->
+                <span class="badge badge-warning p-2 font-weight-bold d-none text-dark" id="selectedCountBadge" style="font-size: 0.85rem;">
+                    0 Selected
+                </span>
+
                 <!-- Mass Assign Control Bar -->
-                <div class="input-group input-group-sm ml-auto" style="max-width: 310px;">
+                <div class="input-group input-group-sm" style="max-width: 280px;">
                     <div class="input-group-prepend">
                         <span class="input-group-text bg-warning text-dark font-weight-bold"><i class="fas fa-users-cog mr-1"></i> Assign To</span>
                     </div>
@@ -109,6 +121,7 @@
                 </div>
             </div>
         </div>
+    </div>
         
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -193,20 +206,6 @@
 
 {% block extra_js %}
 <script>
-    function toggleSelectAll(master) {
-        // Only select currently visible ticket checkboxes
-        document.querySelectorAll('.ticket-item').forEach(row => {
-            if (row.style.display !== 'none') {
-                const cb = row.querySelector('.ticket-select-checkbox');
-                if (cb) cb.checked = master.checked;
-            }
-        });
-    }
-
-    function openEditWindow(url) {
-        window.open(url, 'editTicketWindow', 'width=800,height=600,resizable=yes,scrollbars=yes,status=yes');
-    }
-
     function parseLocalDate(dateStr) {
         if (!dateStr) return null;
         const [year, month, day] = dateStr.split('-').map(Number);
@@ -223,6 +222,21 @@
             container.classList.remove("d-flex");
             container.classList.add("d-none");
         }
+    }
+
+    function toggleSelectAll(master) {
+        // Only select currently visible ticket checkboxes
+        document.querySelectorAll('.ticket-item').forEach(row => {
+            if (row.style.display !== 'none') {
+                const cb = row.querySelector('.ticket-select-checkbox');
+                if (cb) cb.checked = master.checked;
+            }
+        });
+        updateTicketCounts();
+    }
+
+    function openEditWindow(url) {
+        window.open(url, 'editTicketWindow', 'width=800,height=600,resizable=yes,scrollbars=yes,status=yes');
     }
 
     function applyFilters() {
@@ -303,12 +317,15 @@
                 item.style.display = "none";
             }
         });
+
+        // Trigger count update directly after applying filters
+        updateTicketCounts();
     }
 
     function searchTicket() {
-        const rawinput = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
+        const input = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
         if (!input) {
-            alert("Please enter a ticket number, name, subject, or project.");
+            alert("Please enter a ticket number, name, or subject.");
             return;
         }
 
@@ -319,9 +336,8 @@
             const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
             const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
             const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-            const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
 
-            if (idText.includes(cleanInput) || userText.includes(cleanInput) || detailsText.includes(cleanInput) || contextText.includes(cleanInput) || contextText.includes(rawInput){
+            if (idText.includes(input) || userText.includes(input) || detailsText.includes(input)) {
                 item.classList.add("highlight");
                 item.scrollIntoView({ behavior: "smooth", block: "center" });
                 found = true;
@@ -395,32 +411,12 @@
         applyFilters();
     });
 
-    function searchTicket() {
-        const input = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
-        if (!input) {
-            alert("Please enter a ticket number, name, or subject.");
-            return;
+    // Listen for individual checkbox clicks
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('ticket-select-checkbox')) {
+            updateTicketCounts();
         }
-
-        document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
-
-        let found = false;
-        document.querySelectorAll(".ticket-item").forEach(item => {
-            const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-
-            if (idText.includes(input) || userText.includes(input) || detailsText.includes(input)) {
-                item.classList.add("highlight");
-                item.scrollIntoView({ behavior: "smooth", block: "center" });
-                found = true;
-            }
-        });
-
-        if (!found) {
-            alert("Ticket not found.");
-        }
-    }
+    });
 
     document.addEventListener("keydown", function (event) {
         if (event.key === "Enter" && document.activeElement.id === "ticketSearchInput") {

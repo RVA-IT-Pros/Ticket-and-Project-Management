@@ -69,7 +69,11 @@
 
             <!-- Header and Create Ticket Button -->
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                <h3 class="m-0">Your Support Tickets</h3>
+                <div class="d-flex align-items-center gap-2">
+                    <h3 class="m-0">Your Support Tickets</h3>
+                    <span class="badge bg-primary px-3 py-2 fs-6 fw-bold shadow-sm" id="portalTicketCount">0 Tickets</span>
+                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-bold shadow-sm d-none" id="portalSelectedCount">0 Selected</span>
+                </div>
                 <a href="{{ url_for('portal_new_ticket') }}" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i> Create New Ticket
                 </a>
@@ -102,6 +106,9 @@
                 <table class="table table-hover align-middle" id="ticketsTable">
                     <thead class="table-dark">
                         <tr>
+                            <th style="width: 40px;" class="text-center">
+                                <input type="checkbox" id="portalSelectAll" class="form-check-input">
+                            </th>
                             <th>Ticket #</th>
                             <th>Subject</th>
                             <th>Status</th>
@@ -113,6 +120,9 @@
                     <tbody>
                         {% for ticket in tickets %}
                         <tr>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input portal-ticket-checkbox" value="{{ ticket.id }}">
+                            </td>
                             <td class="ticket-id"><strong>#{{ ticket.id }}</strong></td>
                             <td class="ticket-subject">{{ ticket.subject }}</td>
                             <td class="ticket-status">
@@ -145,12 +155,38 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
-        <!-- Combined Search and Status Filter Script -->
+        <!-- Combined Search, Status Filter, and Ticket Counter Script -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const searchInput = document.getElementById('ticketSearchInput');
                 const statusSelect = document.getElementById('statusFilterSelect');
                 const tableRows = document.querySelectorAll('#ticketsTable tbody tr');
+                const selectAllCb = document.getElementById('portalSelectAll');
+
+                function updatePortalCounters() {
+                    const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
+                    const selectedCount = visibleRows.filter(row => {
+                        const cb = row.querySelector('.portal-ticket-checkbox');
+                        return cb && cb.checked;
+                    }).length;
+
+                    // Update Total Filtered Ticket Badge
+                    const ticketBadge = document.getElementById('portalTicketCount');
+                    if (ticketBadge) {
+                        ticketBadge.textContent = `${visibleRows.length} Ticket${visibleRows.length === 1 ? '' : 's'}`;
+                    }
+
+                    // Update Selected Badge
+                    const selectedBadge = document.getElementById('portalSelectedCount');
+                    if (selectedBadge) {
+                        if (selectedCount > 0) {
+                            selectedBadge.textContent = `${selectedCount} Selected`;
+                            selectedBadge.classList.remove('d-none');
+                        } else {
+                            selectedBadge.classList.add('d-none');
+                        }
+                    }
+                }
 
                 function filterTickets() {
                     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -180,10 +216,35 @@
                             row.style.display = 'none';
                         }
                     });
+
+                    updatePortalCounters();
                 }
+
+                // Select All Checkbox Handler
+                if (selectAllCb) {
+                    selectAllCb.addEventListener('change', function() {
+                        tableRows.forEach(row => {
+                            if (row.style.display !== 'none') {
+                                const cb = row.querySelector('.portal-ticket-checkbox');
+                                if (cb) cb.checked = selectAllCb.checked;
+                            }
+                        });
+                        updatePortalCounters();
+                    });
+                }
+
+                // Checkbox Change Handler
+                document.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('portal-ticket-checkbox')) {
+                        updatePortalCounters();
+                    }
+                });
 
                 if (searchInput) searchInput.addEventListener('keyup', filterTickets);
                 if (statusSelect) statusSelect.addEventListener('change', filterTickets);
+
+                // Initial calculation
+                filterTickets();
             });
         </script>
     </body>
