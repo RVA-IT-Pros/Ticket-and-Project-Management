@@ -2099,24 +2099,36 @@ def client_portal():
             .all()
         )
     else:
-        # Standard Clients see only their own tickets
+        # Standard Clients see tickets matched by user_id OR client_id OR requestor_email
         client_tickets = (
-            Ticket.query.filter_by(user_id=current_user.id)
+            Ticket.query.filter(
+                or_(
+                    Ticket.user_id == current_user.id,
+                    and_(
+                        Ticket.client_id == current_user.client_id,
+                        Ticket.client_id.isnot(None),
+                    ),
+                    and_(
+                        Ticket.requestor_email == current_user.email,
+                        Ticket.requestor_email.isnot(None),
+                    ),
+                )
+            )
             .order_by(Ticket.updated_at.desc())
             .all()
         )
 
-# 2. Project Visibility Control
+    # 2. Project Visibility Control
     company_projects = []
     if current_user.client and current_user.client.company_id:
         if is_company_admin:
-            # Company Admins see ALL company projects (Active & Closed)
             company_projects = Project.query.filter_by(
                 company_id=current_user.client.company_id
             ).all()
         else:
-            # Standard Clients see only active projects explicitly shared with them
-            company_projects = current_user.shared_projects.filter(Project.status != "Closed").all()
+            company_projects = current_user.shared_projects.filter(
+                Project.status != "Closed"
+            ).all()
 
     return render_template(
         "client_portal.html",
