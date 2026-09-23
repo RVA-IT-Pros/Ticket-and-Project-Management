@@ -173,6 +173,9 @@
                                     {% if ticket.due_date %}
                                     | <span><strong>Due:</strong> {{ ticket.due_date | ymd }}</span>
                                     {% endif %}
+                                    {% if ticket.project %}
+                                    | <span><strong>Project:</strong> {{ ticket.project.name }} #{{ ticket.project.id }}</span>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td class="align-middle text-center ticket-time">
