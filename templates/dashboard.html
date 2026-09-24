@@ -305,33 +305,75 @@
         });
     }
 
-    function searchTicket() {
-        const rawinput = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
-        if (!input) {
-            alert("Please enter a ticket number, name, subject, or project.");
-            return;
-        }
-
-        document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
-
-        let found = false;
-        document.querySelectorAll(".ticket-item").forEach(item => {
-            const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-            const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
-
-            if (idText.includes(cleanInput) || userText.includes(cleanInput) || detailsText.includes(cleanInput) || contextText.includes(cleanInput) || contextText.includes(rawInput){
-                item.classList.add("highlight");
-                item.scrollIntoView({ behavior: "smooth", block: "center" });
-                found = true;
-            }
-        });
-
-        if (!found) {
-            alert("Ticket not found.");
-        }
+function searchTicket() {
+    const rawInput = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
+    if (!rawInput) {
+        alert("Please enter a ticket number, name, subject, or project.");
+        return;
     }
+
+    // Strictly check if input starts with '#' for Project Search
+    const isProjectSearch = rawInput.startsWith('#');
+    
+    // Extract the exact digit (e.g., '#1' -> '1', '10' -> '10')
+    let targetNum = '';
+    if (isProjectSearch) {
+        targetNum = rawInput.substring(1);
+    } else if (/^\d+$/.test(rawInput)) {
+        targetNum = rawInput;
+    }
+
+    // Clear existing highlights
+    document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
+
+    let found = false;
+    document.querySelectorAll(".ticket-item").forEach(item => {
+        const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+        const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+        const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+        const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
+        const checkbox = item.querySelector(".ticket-select-checkbox");
+
+        let matches = false;
+
+        if (isProjectSearch && targetNum) {
+            // STRICT PROJECT MATCH (#1, #5, #50):
+            // Matches 'Project: ... #1' or 'PROJ: ... #1' with exact word boundary
+            const exactProjectRegex = new RegExp(`(?:project|proj):.*?#${targetNum}(?:\\s|\\||$|<)`, 'i');
+            matches = exactProjectRegex.test(detailsText) || exactProjectRegex.test(contextText);
+        } else if (/^\d+$/.test(rawInput)) {
+            // STRICT TICKET ID MATCH (1, 5, 580 - No hashtag):
+            // Matches '#1 - ' at start of subject, but NEVER '#10', '#100', or '#15'
+            const exactTicketRegex = new RegExp(`^#${targetNum}\\b`, 'i');
+            matches = exactTicketRegex.test(idText.trim());
+        } else {
+            // Standard text keyword search (names, subjects, descriptions)
+            matches = idText.includes(rawInput) || userText.includes(rawInput) || detailsText.includes(rawInput) || contextText.includes(rawInput);
+        }
+
+        if (matches) {
+            item.classList.add("highlight");
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+            if (!found) {
+                item.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+            found = true;
+        } else if (checkbox) {
+            // Uncheck non-matching rows during active search
+            checkbox.checked = false;
+        }
+    });
+
+    if (found) {
+        if (typeof updateTicketCounts === "function") {
+            updateTicketCounts();
+        }
+    } else {
+        alert("No matching tickets or projects found.");
+    }
+}
 
     // --- Dynamic Counter Logic ---
     function updateTicketCounts() {
@@ -395,32 +437,64 @@
         applyFilters();
     });
 
-    function searchTicket() {
-        const input = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
-        if (!input) {
-            alert("Please enter a ticket number, name, or subject.");
-            return;
-        }
-
-        document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
-
-        let found = false;
-        document.querySelectorAll(".ticket-item").forEach(item => {
-            const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-
-            if (idText.includes(input) || userText.includes(input) || detailsText.includes(input)) {
-                item.classList.add("highlight");
-                item.scrollIntoView({ behavior: "smooth", block: "center" });
-                found = true;
-            }
-        });
-
-        if (!found) {
-            alert("Ticket not found.");
-        }
+function searchTicket() {
+    const rawInput = document.getElementById("ticketSearchInput").value.toLowerCase().trim();
+    if (!rawInput) {
+        alert("Please enter a ticket number, name, subject, or project.");
+        return;
     }
+
+    // Check if input starts with '#' for Project Search
+    const isProjectSearch = rawInput.startsWith('#');
+    
+    // Extract digit target
+    let targetNum = '';
+    if (isProjectSearch) {
+        targetNum = rawInput.substring(1);
+    } else if (/^\d+$/.test(rawInput)) {
+        targetNum = rawInput;
+    }
+
+    // Clear existing highlights
+    document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
+
+    let found = false;
+    document.querySelectorAll(".ticket-item").forEach(item => {
+        const idText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+        const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+        const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+        const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
+        const checkbox = item.querySelector(".ticket-select-checkbox");
+
+        let matches = false;
+
+        if (isProjectSearch && targetNum) {
+            // STRICT PROJECT MATCH (#1, #2, #50):
+            const exactProjectRegex = new RegExp(`(?:project|proj):.*?#${targetNum}(?:\\s|\\||$|<)`, 'i');
+            matches = exactProjectRegex.test(detailsText) || exactProjectRegex.test(contextText);
+        } else if (/^\d+$/.test(rawInput)) {
+            // STRICT TICKET ID MATCH (1, 2, 3 - No hashtag):
+            const exactTicketRegex = new RegExp(`^#${targetNum}\\b`, 'i');
+            matches = exactTicketRegex.test(idText.trim());
+        } else {
+            // Standard keyword search
+            matches = idText.includes(rawInput) || userText.includes(rawInput) || detailsText.includes(rawInput) || contextText.includes(rawInput);
+        }
+
+        if (matches) {
+            item.classList.add("highlight");
+            if (checkbox) checkbox.checked = true;
+            if (!found) item.scrollIntoView({ behavior: "smooth", block: "center" });
+            found = true;
+        } else if (checkbox) {
+            checkbox.checked = false;
+        }
+    });
+
+    if (!found) {
+        alert("No matching tickets or projects found.");
+    }
+}
 
     document.addEventListener("keydown", function (event) {
         if (event.key === "Enter" && document.activeElement.id === "ticketSearchInput") {
