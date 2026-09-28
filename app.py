@@ -1980,10 +1980,10 @@ def clean_email_to_markdown_filter(email_text):
 @app.route("/mass_complete_automated_tickets", methods=["GET", "POST"])
 @login_required
 def mass_complete_automated_tickets():
-    # Check if user is admin
-    if current_user.role != "admin":
-        flash("Access denied. Admin privileges required.", "error")
-        return redirect(url_for("dashboard"))
+    # # Check if user is admin
+    # if current_user.role != "admin":
+    #     flash("Access denied. Admin privileges required.", "error")
+    #     return redirect(url_for("dashboard"))
 
     if request.method == "POST":
         # Get ticket IDs from form
@@ -2011,26 +2011,22 @@ def mass_complete_automated_tickets():
         return redirect(url_for("dashboard"))
 
     # GET request - show form
-    # Get tickets that are likely from automated scripts (based on subject patterns)
-    automated_patterns = ["automate"]
-
-    # automated_patterns = [
-    #     'automated', 'script', 'cron', 'scheduled', 'backup', 'sync',
-    #     'update', 'maintenance', 'monitoring', 'health check', 'status',
-    #     'report', 'log', 'scan', 'cleanup', 'archive', 'notification',
-    #     'alert', 'system', 'process', 'job', 'task', 'routine', 'daily',
-    #     'weekly', 'monthly', 'periodic', 'automatic', 'batch', 'import',
-    #     'export', 'sync', 'replication', 'mirror', 'copy', 'transfer'
-    # ]
+    target_sender = "notify@itsupport247.net"
 
     # Get open tickets that match automated patterns
-    automated_tickets = []
-    all_open_tickets = Ticket.query.filter_by(status="Open").all()
+    automated_tickets = (
+        Ticket.query.filter(
+            Ticket.status == "Open",
+            Ticket.requestor_email.ilike(f"%{target_sender}%")
+        )
+        .all()
+    )
+    # all_open_tickets = Ticket.query.filter_by(status="Open").all()
 
-    for ticket in all_open_tickets:
-        subject_lower = ticket.subject.lower()
-        if any(pattern in subject_lower for pattern in automated_patterns):
-            automated_tickets.append(ticket)
+    # for ticket in all_open_tickets:
+    #     subject_lower = ticket.subject.lower()
+    #     if any(pattern in subject_lower for pattern in automated_patterns):
+    #         automated_tickets.append(ticket)
 
     return render_template(
         "mass_complete_automated_tickets.html", tickets=automated_tickets
