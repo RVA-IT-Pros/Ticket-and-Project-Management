@@ -2037,6 +2037,7 @@ def mass_complete_automated_tickets():
     )
 
 
+import re
 @app.route("/search", methods=["GET"])
 @login_required
 def search_tickets():
@@ -2047,40 +2048,43 @@ def search_tickets():
     if q:
         like = f"%{q}%"
         id_filter = []
-        clean_q = q.lstrip("#")
-        if clean_q.isdigit():
-           # numeric search matches ID exactly, but still OR with the fuzzy fields
-            id_num = int(clean_q)
-            id_filter = [Ticket.id == id_num, Ticket.project_id == id_num]
+        
+        # Searching '#1' or '#2' -> Strictly filter by Project ID
+        if q.startswith("#"):
+            clean_proj_num = q.lstrip("#")
+            if clean_proj_num.isdigit():
+                id_filter = [Ticket.project_id == int(clean_proj_num)]
+        # Searching plain '1', '2', '3' -> Strictly filter by Ticket ID
+        elif q.isdigit():
+            id_filter = [Ticket.id == int(q)]
 
-        tickets = (
-            Ticket.query.filter(
-                or_(
-                    *id_filter,
-                    Ticket.subject.ilike(like),
-                    Ticket.description.ilike(like),
-                    # client fields (first/last/email)
-                    Ticket.client.has(
-                        or_(
-                            Client.first_name.ilike(like),
-                            Client.last_name.ilike(like),
-                            Client.email.ilike(like),
-                            # company name
-                            Client.company.has(Company.name.ilike(like)),
-                        )
-                    ),
-                    # any note content contains text
-                    Ticket.notes.any(TicketNote.content.ilike(like)),
+        if id_filter:
+            tickets = Ticket.query.filter(*id_filter).order_by(Ticket.created_at.desc()).all()
+        else:
+            tickets = (
+                Ticket.query.filter(
+                    or_(
+                        Ticket.subject.ilike(like),
+                        Ticket.description.ilike(like),
+                        Ticket.project.has(Project.name.ilike(like)),
+                        Ticket.client.has(
+                            or_(
+                                Client.first_name.ilike(like),
+                                Client.last_name.ilike(like),
+                                Client.email.ilike(like),
+                                Client.company.has(Company.name.ilike(like)),
+                            )
+                        ),
+                        Ticket.notes.any(TicketNote.content.ilike(like)),
+                    )
                 )
+                .order_by(Ticket.created_at.desc())
+                .limit(200)
+                .all()
             )
-            .order_by(Ticket.created_at.desc())
-            .limit(200)  # safety cap; adjust as you like or add pagination
-            .all()
-        )
         total = len(tickets)
 
     return render_template("search_tickets.html", q=q, tickets=tickets, total=total)
-
 
 @app.route("/portal")
 @login_required
