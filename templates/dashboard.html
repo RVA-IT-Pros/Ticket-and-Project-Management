@@ -9,6 +9,9 @@
             <h3 class="m-0 font-weight-bold text-dark">Ticket Board</h3>
         </div>
         <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                    <a href="{{ url_for('mass_complete_automated_tickets') }}" class="btn btn-warning btn-sm mr-2">
+                        <i class="fas fa-check-double mr-1"></i> Mass Complete Tickets
+                    </a>
                     <a href="{{ url_for('download_tickets_excel') }}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-file-excel mr-1"></i> Download Open Tickets
                     </a>
