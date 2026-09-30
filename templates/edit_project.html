@@ -1,80 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Project</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Edit Project</h2>
+{% extends "base.html" %}
 
-    <!-- Flash messages for success or errors -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-{{ messages[0][0] }} d-flex align-items-center fade show" role="alert"">
-                {{ messages[0][1] }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+{% block title %}Edit Project #{{ project.id }} | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pt-2">
+    <div class="col-lg-8">
+        <div class="card card-outline card-warning shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h4 class="card-title font-weight-bold m-0"><i class="fas fa-edit mr-2 text-warning"></i>Edit Project: {{ project.name }}</h4>
             </div>
-        {% endif %}
-    {% endwith %}
+            <form method="POST">
+                <div class="card-body">
+                    {{ form.hidden_tag() }}
 
-        <!-- Edit Project Form -->
-        <form method="POST" action="">
-            {{ form.hidden_tag() }}
-
-            <!-- Project Name -->
-            <div class="mb-3">
-                {{ form.name.label(class="form-label") }}
-                {{ form.name(class="form-control", placeholder="Enter project name") }}
-                {% if form.name.errors %}
-                    <div class="text-danger">
-                        {{ form.name.errors[0] }}
+                    <div class="form-group mb-3">
+                        {{ form.name.label(class="font-weight-bold") }}
+                        {{ form.name(class="form-control", placeholder="Enter project name") }}
+                        {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors[0] }}</div>{% endif %}
                     </div>
-                {% endif %}
-            </div>
 
-            <!-- Project Description -->
-            <div class="mb-3">
-                {{ form.description.label(class="form-label") }}
-                {{ form.description(class="form-control", rows=3, placeholder="Enter project description") }}
-                {% if form.description.errors %}
-                    <div class="text-danger">
-                        {{ form.description.errors[0] }}
+                    <div class="form-group mb-3">
+                        {{ form.description.label(class="font-weight-bold") }}
+                        {{ form.description(class="form-control", rows=3, placeholder="Enter project description") }}
+                        {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors[0] }}</div>{% endif %}
                     </div>
-                {% endif %}
-            </div>
-            <!-- Company Selection -->
-            <div class="mb-3">
-                {{ form.company_id.label(class="form-label") }}
-                {{ form.company_id(class="form-control") }}  <!-- Company dropdown -->
-                {% if form.company_id.errors %}
-                    <div class="text-danger">
-                        {{ form.company_id.errors[0] }}
-                    </div>
-                {% endif %}
-            </div>
 
-            <!-- Project Status -->
-            <div class="mb-3">
-                {{ form.status.label(class="form-label") }}
-                {{ form.status(class="form-control") }}
-                {% if form.status.errors %}
-                    <div class="text-danger">
-                        {{ form.status.errors[0] }}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.company_id.label(class="font-weight-bold") }}
+                            {{ form.company_id(class="form-control custom-select") }}
+                            {% if form.company_id.errors %}<div class="text-danger small">{{ form.company_id.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.status.label(class="font-weight-bold") }}
+                            {{ form.status(class="form-control custom-select") }}
+                            {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors[0] }}</div>{% endif %}
+                        </div>
                     </div>
-                {% endif %}
-            </div>
+                </div>
 
-            <!-- Submit Button -->
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary">Update Project</button>
-                <a href="{{ url_for('projects_home') }}" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
+                <div class="card-footer bg-white text-right">
+                    <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="btn btn-secondary mr-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary font-weight-bold px-4">Update Project</button>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}
