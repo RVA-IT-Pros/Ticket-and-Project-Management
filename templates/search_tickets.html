@@ -1,101 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Search Tickets</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body { background-color: #f8f9fa; }
-    .tickets-container { padding:20px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.1); border-radius:5px; }
-    .ticket-item {
-      display:grid; grid-template-columns: 80px 2fr 1fr 1fr auto; gap:12px;
-      border:1px solid #ddd; padding:12px; border-radius:6px; margin-bottom:12px; background:#fff;
-    }
-    .muted { color:#666; font-size:0.9rem; }
-    .badge-status { font-size:.8rem; }
-  </style>
-</head>
-<body>
-      <!-- Flash messages for success or errors -->
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-          <div class="alert alert-{{ messages[0][0] }} d-flex align-items-center fade show" role="alert"">
-              {{ messages[0][1] }}
-              <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-      {% endif %}
-  {% endwith %}
-  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom" style="background:#343a40;">
-    <div class="container-fluid">
-      <a class="navbar-brand ms-3" href="{{ url_for('dashboard') }}">
-        <img src="{{ BRAND_LOGO_PATH }}" alt="Logo" style="height: 30px; margin-right: 10px; border-radius: 50%;">
-        {{ BRAND_NAME }}
-      </a>
-      <div class="ms-auto">
-        <a href="{{ url_for('dashboard') }}" class="nav-link d-inline text-white">All Tickets</a>
-      </div>
-    </div>
-  </nav>
+{% extends "base.html" %}
 
-  <div class="container mt-4">
-    <div class="tickets-container">
-    <form method="get" action="{{ url_for('search_tickets') }}" class="d-flex gap-2 mb-3">
-      <input class="form-control" type="search" name="q" placeholder="Search ID, subject, description, client, company, or note..." value="{{ q or '' }}" autofocus>
-      <button class="btn btn-primary" type="submit">Search</button>
-    </form>
+{% block title %}Search Tickets | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
 
-      {% if q %}
-        <p class="muted">Results for "<strong>{{ q }}</strong>": {{ total }}</p>
-      {% endif %}
+{% block content %}
+<div class="container-fluid pt-2">
+    <div class="card card-outline card-primary shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <form method="get" action="{{ url_for('search_tickets') }}" class="d-flex gap-2">
+                <input class="form-control mr-2" type="search" name="q" placeholder="Search ID, subject, description, client, company, or note..." value="{{ q or '' }}" autofocus>
+                <button class="btn btn-primary font-weight-bold px-4" type="submit">
+                    <i class="fas fa-search mr-1"></i> Search
+                </button>
+            </form>
+        </div>
 
-      {% if tickets %}
-        <ul class="list-unstyled m-0 p-0">
-          {% for t in tickets %}
-            <li class="ticket-item">
-              <div>
-                <div class="fw-bold">#{{ t.id }}</div>
-                <div class="badge bg-secondary badge-status">{{ t.status }}</div>
-              </div>
-              <div>
-                <div class="fw-bold">{{ t.subject }}</div>
-                <div class="muted">
-                  {% if t.project %}
-                    Proj: {{ t.project.name }}{% if t.phase %} · Phase: {{ t.phase.name }}{% endif %}
-                  {% else %}
-                    General
-                  {% endif %}
+        <div class="card-body p-0">
+            {% if q %}
+                <div class="p-3 bg-light border-bottom text-muted">
+                    Found <strong>{{ total }}</strong> result(s) for "<strong>{{ q }}</strong>":
                 </div>
-              </div>
-              <div class="muted">
-                <div>Client: {{ (t.client.first_name or '') ~ ' ' ~ (t.client.last_name or '') }}</div>
-                {% if t.client and t.client.company %}<div>Company: {{ t.client.company.name }}</div>{% endif %}
-              </div>
-              <div class="muted">
-                {% if t.due_date %}<div>Due: {{ t.due_date|ymd }}</div>{% endif %}
-                {% if t.completed_at %}<div>Completed: {{ t.completed_at|ymd }}</div>{% endif %}
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                <a href="{{ url_for('view_ticket', id=t.id) }}"
-                   class="btn btn-info btn-sm"
-                   onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">
-                  View
-                </a>
-                <a href="{{ url_for('edit_ticket', id=t.id) }}"
-                   class="btn btn-outline-secondary btn-sm"
-                   onclick="window.open(this.href, 'editTicketWindow', 'width=800,height=600,resizable=yes,scrollbars=yes,status=yes'); return false;">
-                  Edit
-                </a>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      {% elif q %}
-        <div class="alert alert-warning">No tickets matched your search.</div>
-      {% else %}
-        <div class="alert alert-info">Enter a term above to search across all tickets.</div>
-      {% endif %}
+            {% endif %}
+
+            {% if tickets %}
+                <div class="list-group list-group-flush">
+                    {% for t in tickets %}
+                        <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center p-3">
+                            <div class="mb-2 mb-md-0">
+                                <span class="font-weight-bold text-dark mr-2">#{{ t.id }}</span>
+                                <span class="badge bg-secondary mr-2">{{ t.status }}</span>
+                                <span class="font-weight-bold">{{ t.subject }}</span>
+                                <div class="text-muted small mt-1">
+                                    Client: {{ (t.client.first_name or '') ~ ' ' ~ (t.client.last_name or '') }}
+                                    {% if t.client and t.client.company %} ({{ t.client.company.name }}){% endif %}
+                                    {% if t.project %} · Project: {{ t.project.name }}{% endif %}
+                                    {% if t.due_date %} · Due: {{ t.due_date|ymd }}{% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('view_ticket', id=t.id) }}" class="btn btn-info btn-xs mr-1" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </a>
+                                <a href="{{ url_for('edit_ticket', id=t.id) }}" class="btn btn-warning btn-xs" onclick="window.open(this.href, 'editTicketWindow', 'width=800,height=600,resizable=no,scrollbars=yes,status=yes'); return false;">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif q %}
+                <div class="p-4 text-center text-muted">No tickets matched your search terms.</div>
+            {% else %}
+                <div class="p-4 text-center text-muted">Enter a search term above to locate tickets across subjects, notes, clients, and descriptions.</div>
+            {% endif %}
+        </div>
     </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

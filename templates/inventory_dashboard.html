@@ -1,250 +1,173 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Inventory & Asset Dashboard</title>
-        <!-- Bootstrap 5 CSS for clean styling -->
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-        />
-        <style>
-            body {
-                background-color: #f8f9fa;
-                padding-bottom: 50px;
-            }
-            .card-header {
-                font-weight: bold;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container mt-4">
-            <h2 class="mb-4">Inventory & Asset Management</h2>
+{% extends "base.html" %}
 
-            <!-- Flash Messages (Displays success/error alerts) -->
-            {% with messages = get_flashed_messages(with_categories=true) %} {%
-            if messages %} {% for category, message in messages %}
-            <div
-                class="alert alert-{{ 'success' if category == 'message' else category }} mb-4"
-            >
-                {{ message }}
-            </div>
-            {% endfor %} {% endif %} {% endwith %}
+{% block title %}Inventory & Assets | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
 
-            <div class="row">
-                <!-- FORM 1: Add Bulk Consumable -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-primary text-white">
-                            Add Bulk Consumable (Cables, Adapters, etc.)
+{% block content %}
+<div class="container-fluid pt-2">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-boxes text-primary mr-2"></i>Inventory & Asset Management</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- FORM 1: Add Bulk Consumable -->
+        <div class="col-md-6 mb-4">
+            <div class="card card-outline card-primary shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title font-weight-bold m-0 text-primary">Add Bulk Consumable</h5>
+                </div>
+                <form method="POST">
+                    <div class="card-body">
+                        {{ inv_form.hidden_tag() }}
+                        <div class="form-group mb-3">
+                            {{ inv_form.item_name.label(class="font-weight-bold") }}
+                            {{ inv_form.item_name(class="form-control", placeholder="e.g. UniFi Patch Cable") }}
                         </div>
-                        <div class="card-body">
-                            <form method="POST">
-                                {{ inv_form.hidden_tag() }}
-                                <div class="mb-3">
-                                    {{
-                                    inv_form.item_name.label(class="form-label")
-                                    }} {{
-                                    inv_form.item_name(class="form-control",
-                                    placeholder="e.g., UniFi Patch Cable") }}
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col">
-                                        {{
-                                        inv_form.sku.label(class="form-label")
-                                        }} {{ inv_form.sku(class="form-control")
-                                        }}
-                                    </div>
-                                    <div class="col">
-                                        {{
-                                        inv_form.qty_in_stock.label(class="form-label")
-                                        }} {{
-                                        inv_form.qty_in_stock(class="form-control")
-                                        }}
-                                    </div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col">
-                                        {{
-                                        inv_form.landed_unit_cost.label(class="form-label")
-                                        }} {{
-                                        inv_form.landed_unit_cost(class="form-control",
-                                        placeholder="$0.00") }}
-                                    </div>
-                                    <div class="col">
-                                        {{
-                                        inv_form.retail_unit_price.label(class="form-label")
-                                        }} {{
-                                        inv_form.retail_unit_price(class="form-control",
-                                        placeholder="$0.00") }}
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    {{
-                                    inv_form.low_stock_threshold.label(class="form-label")
-                                    }} {{
-                                    inv_form.low_stock_threshold(class="form-control")
-                                    }}
-                                </div>
-                                {{ inv_form.submit(class="btn btn-primary
-                                w-100") }}
-                            </form>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                {{ inv_form.sku.label(class="font-weight-bold") }}
+                                {{ inv_form.sku(class="form-control") }}
+                            </div>
+                            <div class="col-6">
+                                {{ inv_form.qty_in_stock.label(class="font-weight-bold") }}
+                                {{ inv_form.qty_in_stock(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                {{ inv_form.landed_unit_cost.label(class="font-weight-bold") }}
+                                {{ inv_form.landed_unit_cost(class="form-control", placeholder="$0.00") }}
+                            </div>
+                            <div class="col-6">
+                                {{ inv_form.retail_unit_price.label(class="font-weight-bold") }}
+                                {{ inv_form.retail_unit_price(class="form-control", placeholder="$0.00") }}
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            {{ inv_form.low_stock_threshold.label(class="font-weight-bold") }}
+                            {{ inv_form.low_stock_threshold(class="form-control") }}
                         </div>
                     </div>
-                </div>
+                    <div class="card-footer bg-white text-right">
+                        {{ inv_form.submit(class="btn btn-primary font-weight-bold btn-block") }}
+                    </div>
+                </form>
+            </div>
+        </div>
 
-                <!-- FORM 2: Deploy New Asset -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-success text-white">
-                            Log/Deploy New Asset (Switches, APs, Routers)
+        <!-- FORM 2: Deploy New Asset -->
+        <div class="col-md-6 mb-4">
+            <div class="card card-outline card-success shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title font-weight-bold m-0 text-success">Log/Deploy New Asset</h5>
+                </div>
+                <form method="POST">
+                    <div class="card-body">
+                        {{ asset_form.hidden_tag() }}
+                        <div class="form-group mb-3">
+                            {{ asset_form.company_id.label(class="font-weight-bold") }}
+                            {{ asset_form.company_id(class="form-control custom-select") }}
                         </div>
-                        <div class="card-body">
-                            <form method="POST">
-                                {{ asset_form.hidden_tag() }}
-                                <div class="mb-3">
-                                    {{
-                                    asset_form.company_id.label(class="form-label")
-                                    }} {{
-                                    asset_form.company_id(class="form-select")
-                                    }}
-                                </div>
-                                <div class="mb-3">
-                                    {{
-                                    asset_form.model_name.label(class="form-label")
-                                    }} {{
-                                    asset_form.model_name(class="form-control",
-                                    placeholder="e.g., Switch Pro Max 48 PoE")
-                                    }}
-                                </div>
-                                <div class="mb-3">
-                                    {{
-                                    asset_form.serial_number.label(class="form-label")
-                                    }} {{
-                                    asset_form.serial_number(class="form-control")
-                                    }}
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col">
-                                        {{
-                                        asset_form.purchase_cost.label(class="form-label")
-                                        }} {{
-                                        asset_form.purchase_cost(class="form-control",
-                                        placeholder="$0.00") }}
-                                    </div>
-                                    <div class="col">
-                                        {{
-                                        asset_form.status.label(class="form-label")
-                                        }} {{
-                                        asset_form.status(class="form-select")
-                                        }}
-                                    </div>
-                                </div>
-                                {{ asset_form.submit(class="btn btn-success
-                                w-100") }}
-                            </form>
+                        <div class="form-group mb-3">
+                            {{ asset_form.model_name.label(class="font-weight-bold") }}
+                            {{ asset_form.model_name(class="form-control", placeholder="e.g., Switch Pro Max 48 PoE") }}
+                        </div>
+                        <div class="form-group mb-3">
+                            {{ asset_form.serial_number.label(class="font-weight-bold") }}
+                            {{ asset_form.serial_number(class="form-control") }}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                {{ asset_form.purchase_cost.label(class="font-weight-bold") }}
+                                {{ asset_form.purchase_cost(class="form-control", placeholder="$0.00") }}
+                            </div>
+                            <div class="col-6">
+                                {{ asset_form.status.label(class="font-weight-bold") }}
+                                {{ asset_form.status(class="form-control custom-select") }}
+                            </div>
                         </div>
                     </div>
-                </div>
+                    <div class="card-footer bg-white text-right">
+                        {{ asset_form.submit(class="btn btn-success font-weight-bold btn-block") }}
+                    </div>
+                </form>
             </div>
+        </div>
+    </div>
 
-            <!-- TABLE 1: Current Consumables Stock -->
-            <div class="card shadow-sm mb-5">
-                <div class="card-header bg-dark text-white">
-                    Current Consumable Stock
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped table-hover mb-0">
-                        <thead class="table-light">
+    <!-- TABLE 1: Current Consumables Stock -->
+    <div class="card card-outline card-primary shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="card-title font-weight-bold m-0">Current Consumable Stock</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Item Name</th>
+                            <th>SKU</th>
+                            <th>Qty in Stock</th>
+                            <th>Landed Cost</th>
+                            <th>Retail Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory_items %}
                             <tr>
-                                <th>Item Name</th>
-                                <th>SKU</th>
-                                <th>Qty in Stock</th>
-                                <th>Landed Cost</th>
-                                <th>Retail Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in inventory_items %}
-                            <tr>
-                                <td>{{ item.item_name }}</td>
+                                <td class="font-weight-bold">{{ item.item_name }}</td>
                                 <td>{{ item.sku or 'N/A' }}</td>
                                 <td>
-                                    <span
-                                        class="badge {{ 'bg-danger' if item.qty_in_stock <= item.low_stock_threshold else 'bg-primary' }}"
-                                    >
+                                    <span class="badge {% if item.qty_in_stock <= item.low_stock_threshold %}badge-danger{% else %}badge-primary{% endif %} px-2 py-1">
                                         {{ item.qty_in_stock }}
                                     </span>
                                 </td>
-                                <td>
-                                    ${{ "%.2f"|format(item.landed_unit_cost) }}
-                                </td>
-                                <td>
-                                    ${{ "%.2f"|format(item.retail_unit_price) }}
-                                </td>
+                                <td>${{ "%.2f"|format(item.landed_unit_cost) }}</td>
+                                <td>${{ "%.2f"|format(item.retail_unit_price) }}</td>
                             </tr>
-                            {% else %}
-                            <tr>
-                                <td
-                                    colspan="5"
-                                    class="text-center text-muted py-3"
-                                >
-                                    No consumables in inventory yet.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TABLE 2: Deployed Assets -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    Deployed / Staged Assets
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Model</th>
-                                <th>Serial Number</th>
-                                <th>Assigned Client ID</th>
-                                <th>Landed Cost</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for asset in deployed_assets %}
-                            <tr>
-                                <td>{{ asset.model_name }}</td>
-                                <td>{{ asset.serial_number or 'N/A' }}</td>
-                                <td>Company #{{ asset.company_id }}</td>
-                                <td>
-                                    ${{ "%.2f"|format(asset.purchase_cost) }}
-                                </td>
-                                <td>
-                                    <span class="badge bg-secondary"
-                                        >{{ asset.status }}</span
-                                    >
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td
-                                    colspan="5"
-                                    class="text-center text-muted py-3"
-                                >
-                                    No assets deployed yet.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center text-muted py-4">No consumables in inventory yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </body>
-</html>
+    </div>
+
+    <!-- TABLE 2: Deployed Assets -->
+    <div class="card card-outline card-success shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="card-title font-weight-bold m-0">Deployed / Staged Assets</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Model</th>
+                            <th>Serial Number</th>
+                            <th>Assigned Company</th>
+                            <th>Landed Cost</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in deployed_assets %}
+                            <tr>
+                                <td class="font-weight-bold">{{ asset.model_name }}</td>
+                                <td>{{ asset.serial_number or 'N/A' }}</td>
+                                <td>Company #{{ asset.company_id }}</td>
+                                <td>${{ "%.2f"|format(asset.purchase_cost) }}</td>
+                                <td><span class="badge bg-secondary">{{ asset.status }}</span></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center text-muted py-4">No assets deployed yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,132 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Billing Dashboard</title>
-    <!-- Bootstrap CSS (optional) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Flash messages for success or errors -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-{{ messages[0][0] }} d-flex align-items-center fade show" role="alert"">
-                {{ messages[0][1] }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endif %}
-    {% endwith %}
+{% extends "base.html" %}
 
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
-    <a href="{{ url_for('billing_review_dashboard') }}" class="btn btn-secondary mt-3">Review Open Tickets for Billing</a>
-    <a href="{{ url_for('invoice_history') }}"  class="btn btn-secondary mt-3">
-        <i class="fas fa-history"></i> View Invoice History
-    </a>
-    <div class="container mt-5">
-        <h2 class="text-center">Billing Dashboard</h2>
+{% block title %}Billing Dashboard | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
 
-        <!-- Date Range Filter Form -->
-        <form method="POST" class="mb-4 text-center">
-            <div class="row">
-                <div class="col-md-4">
-                    <label for="start_date" class="form-label">Start Date</label>
-                    <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+{% block content %}
+<div class="container-fluid pt-2">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-file-invoice-dollar text-danger mr-2"></i>Billing Dashboard</h2>
+        </div>
+        <div class="col-md-6 text-md-right mt-2 mt-md-0">
+            <a href="{{ url_for('billing_review_dashboard') }}" class="btn btn-warning btn-sm mr-2">
+                <i class="fas fa-tasks mr-1"></i> Review Non-Billable
+            </a>
+            <a href="{{ url_for('invoice_history') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-history mr-1"></i> View Invoice History
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Range Filter Card -->
+    <div class="card card-outline card-primary shadow-sm mb-4">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <label for="start_date" class="font-weight-bold">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+                    </div>
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <label for="end_date" class="font-weight-bold">End Date</label>
+                        <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary btn-block font-weight-bold">
+                            <i class="fas fa-filter mr-1"></i> Filter Date Range
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label for="end_date" class="form-label">End Date</label>
-                    <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+            </form>
+        </div>
+    </div>
+
+    <!-- Tickets Table Card -->
+    {% if tickets %}
+        <form method="POST" action="{{ url_for('batch_push_qbo') }}">
+            <div class="card card-outline card-success shadow-sm mb-4">
+                <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                    <h5 class="card-title font-weight-bold m-0 text-dark">Billable Tickets Ready for Invoicing</h5>
+                    <button type="submit" class="btn btn-success font-weight-bold btn-sm">
+                        <i class="fas fa-file-invoice-dollar mr-1"></i> Batch Push Selected to QBO
+                    </button>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th style="width: 40px;" class="text-center">
+                                        <input type="checkbox" id="selectAll" onclick="toggleCheckboxes(this)">
+                                    </th>
+                                    <th>Ticket #</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Created At</th>
+                                    <th>Due Date</th>
+                                    <th>Est. Hours</th>
+                                    <th>Logged Hours</th>
+                                    <th>View</th>
+                                    <th style="width: 200px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in tickets %}
+                                    <tr>
+                                        <td class="text-center align-middle">
+                                            {% if ticket.billable == "R" %}
+                                                <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="ticket-checkbox">
+                                            {% else %}
+                                                <i class="fas fa-check text-success" title="Already Invoiced"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle"><strong>#{{ ticket.id }}</strong></td>
+                                        <td class="align-middle">{{ ticket.subject }}</td>
+                                        <td class="align-middle"><span class="badge bg-secondary">{{ ticket.status }}</span></td>
+                                        <td class="align-middle"><span class="badge {% if ticket.priority == 'Critical' %}badge-danger{% elif ticket.priority == 'High' %}badge-warning{% else %}badge-info{% endif %}">{{ ticket.priority }}</span></td>
+                                        <td class="align-middle small">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') if ticket.created_at }}</td>
+                                        <td class="align-middle small">{{ ticket.due_date.strftime('%m/%d/%Y') if ticket.due_date else '' }}</td>
+                                        <td class="align-middle">{{ ticket.estimated_hours }}</td>
+                                        <td class="align-middle font-weight-bold text-primary">{{ ticket_totals[ticket.id] | round(2) }}</td>
+                                        <td class="align-middle">
+                                            <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-xs" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">View</a>
+                                        </td>
+                                        <td class="align-middle">
+                                            <button type="submit" formaction="{{ url_for('toggle_invoiced', ticket_id=ticket.id) }}" class="btn btn-xs btn-outline-secondary btn-block mb-1">
+                                                {% if ticket.billable == "I" %} Unmark Invoiced {% else %} Mark Invoiced (Manual) {% endif %}
+                                            </button>
+                                            {% if ticket.billable == "R" %}
+                                                <button type="submit" formaction="{{ url_for('push_invoice_to_qbo', ticket_id=ticket.id) }}" class="btn btn-xs btn-success btn-block font-weight-bold">
+                                                    Push Single to QBO
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </form>
+    {% else %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center text-muted py-5">
+                <i class="fas fa-file-invoice fa-3x mb-3 text-secondary"></i>
+                <p class="m-0">No billable tickets available for the selected date range.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
 
-        <!-- Tickets Table -->
-        {% if tickets %}
-                <form method="POST" action="{{ url_for('batch_push_qbo') }}">
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4>Review Open Tickets for Billing</h4>
-                        <button type="submit" class="btn btn-success fw-bold">
-                            <i class="fas fa-file-invoice-dollar"></i> Batch Push Selected to QBO
-                        </button>
-                    </div>
-
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th scope="col"><input type="checkbox" id="selectAll" class="form-check-input" onclick="toggleCheckboxes(this)"></th>
-                                <th scope="col">Ticket #</th>
-                                <th>Subject</th>
-                                <th>Status</th>
-                                <th>Priority</th>
-                                <th>Created At</th>
-                                <th>Due Date</th>
-                                <th>Estimated Hours</th>
-                                <th>Total Time (Hours)</th>
-                                <th>Project</th>
-                                <th>Review Ticket</th>
-                                <th>Mark as Invoiced</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in tickets %}
-                                <tr>
-                                    <td>
-                                        {% if ticket.billable == "R" %}
-                                            <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="form-check-input ticket-checkbox">
-                                        {% else %}
-                                            <i class="fas fa-check text-success" title="Already Invoiced"></i>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>{{ ticket.id }}</td>
-                                    <td>{{ ticket.subject }}</td>
-                                    <td>{{ ticket.status }}</td>
-                                    <td>{{ ticket.priority }}</td>
-                                    <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    {% if ticket.due_date %}
-                                        <td>{{ ticket.due_date.strftime('%m/%d/%Y') }}</td>
-                                    {% else %}
-                                        <td></td>
-                                    {% endif %}
-                                    <td>{{ ticket.estimated_hours }}</td>
-                                    <td>{{ ticket_totals[ticket.id] | round(2) }}</td>
-                                    <td>{{ ticket.project_id }}</td>
-                                    <td>
-                                        <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-sm">View</a>
-                                    </td>
-                                    <td>
-                                        <button type="submit" formaction="{{ url_for('toggle_invoiced', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-secondary w-100 mb-1">
-                                            {% if ticket.billable == "I" %} Unmark Invoiced {% else %} Mark Invoiced (Manual) {% endif %}
-                                        </button>
-
-                                        {% if ticket.billable == "R" %}
-                                        <button type="submit" formaction="{{ url_for('push_invoice_to_qbo', ticket_id=ticket.id) }}" class="btn btn-sm btn-success w-100 fw-bold">
-                                            Push to QBO (Single)
-                                        </button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </form> {% else %}
-                    <p class="text-center">No billable tickets available for the selected date range.</p>
-                {% endif %}
-    </div>
-
-    <!-- Optional Bootstrap JS (for Bootstrap functionality) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+{% block extra_js %}
+<script>
     function toggleCheckboxes(source) {
-        checkboxes = document.getElementsByClassName('ticket-checkbox');
-        for(var i=0, n=checkboxes.length;i<n;i++) {
+        const checkboxes = document.getElementsByClassName('ticket-checkbox');
+        for (let i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = source.checked;
         }
     }
-    </script>
-</body>
-</html>
+</script>
+{% endblock %}

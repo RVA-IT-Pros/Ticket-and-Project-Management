@@ -1,16 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Cleanup Results</title>
-</head>
-<body>
-    <h1>Ticket Cleanup Results</h1>
-    <ul>
-        {% for result in results %}
-            <li>{{ result['message'] }}</li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Cleanup Results | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-2">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-broom text-primary mr-2"></i>Ticket Cleanup Results</h2>
+        </div>
+        <div class="col-md-6 text-md-right mt-2 mt-md-0">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="card card-outline card-primary shadow-sm mb-4">
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for result in results %}
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="fas {% if result['success'] %}fa-check-circle text-success{% else %}fa-exclamation-triangle text-danger{% endif %} mr-3"></i>
+                        <span>{{ result['message'] }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

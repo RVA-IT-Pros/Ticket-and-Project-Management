@@ -1,100 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Something Done!</title>
-    <!-- Bootstrap CSS (optional, for styling) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <!-- Flash messages for success or errors -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-{{ messages[0][0] }} d-flex align-items-center fade show" role="alert"">
-                {{ messages[0][1] }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endif %}
-    {% endwith %}
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <h2 class="text-center">Get Something Done!</h2>
+{% block title %}Get Something Done! | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
 
-                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-                <a href="{{ url_for('random_number') }}" class="btn btn-secondary">Random Number Generator</a>
-
-                <!-- Flash messages for success or errors -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        <div class="alert alert-{{ messages[0][0] }}">
-                            {{ messages[0][1] }}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-
-                
-                <!-- Ticket List -->
-                {% if random_ticket %}
-                <table class="table table-striped table-bordered">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Subject</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Due Date</th>
-                            <th>Estimated Hours</th>
-                            <th>Project</th>
-                            <th>Phase</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td> <!-- Since it's just one ticket, you can hard-code the index as 1 -->
-                            <td>{{ random_ticket.subject }}</td>
-                            <td>{{ random_ticket.status }}</td>
-                            <td>{{ random_ticket.priority }}</td>
-                            {% if random_ticket.due_date %}
-                                <td>{{ random_ticket.due_date.strftime('%m/%d/%Y') }}</td>
-                            {% else %}
-                                <td></td>
-                            {% endif %}
-                            <td>{{ random_ticket.estimated_hours }}</td>
-            
-                            <td>
-                                {% if random_ticket.project %}
-                                    {{ random_ticket.project.name }}
-                                {% else %}
-                                    No Project
-                                {% endif %}
-                            </td>
-            
-                            <td>
-                                {% if random_ticket.phase %}
-                                    {{ random_ticket.phase.name }}
-                                {% else %}
-                                    No Phase
-                                {% endif %}
-                            </td>
-            
-                            <td>
-                                <a href="{{ url_for('view_ticket', id=random_ticket.id) }}" class="btn btn-info btn-sm">View</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            {% else %}
-                <p class="text-center">No tickets available.</p>
-            {% endif %}
-            </div>
+{% block content %}
+<div class="container-fluid pt-2">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-dice text-success mr-2"></i>Get Something Done!</h2>
+        </div>
+        <div class="col-md-6 text-md-right mt-2 mt-md-0">
+            <a href="{{ url_for('random_number') }}" class="btn btn-info btn-sm text-white mr-2">
+                <i class="fas fa-sort-numeric-up mr-1"></i> Random Number Generator
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+            </a>
         </div>
     </div>
 
-    <!-- Optional Bootstrap JS (for Bootstrap functionality) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <div class="card card-outline card-success shadow-sm mb-4">
+        <div class="card-body p-0">
+            {% if random_ticket %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Due Date</th>
+                                <th>Est. Hours</th>
+                                <th>Project</th>
+                                <th>Phase</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-weight-bold">{{ random_ticket.subject }}</td>
+                                <td><span class="badge bg-secondary">{{ random_ticket.status }}</span></td>
+                                <td><span class="badge {% if random_ticket.priority == 'Critical' %}badge-danger{% elif random_ticket.priority == 'High' %}badge-warning{% else %}badge-info{% endif %}">{{ random_ticket.priority }}</span></td>
+                                <td class="small">{{ random_ticket.due_date.strftime('%m/%d/%Y') if random_ticket.due_date else '' }}</td>
+                                <td>{{ random_ticket.estimated_hours }}</td>
+                                <td class="small">{{ random_ticket.project.name if random_ticket.project else 'No Project' }}</td>
+                                <td class="small">{{ random_ticket.phase.name if random_ticket.phase else 'No Phase' }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_ticket', id=random_ticket.id) }}" class="btn btn-info btn-sm font-weight-bold">
+                                        <i class="fas fa-eye mr-1"></i> View Task
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="fas fa-check-double fa-3x mb-3 text-success"></i>
+                    <p class="m-0">No eligible tickets available right now. Great job!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
