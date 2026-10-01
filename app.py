@@ -2042,37 +2042,54 @@ def search_tickets():
 
     if q:
         like = f"%{q}%"
-        id_filter = []
-        clean_q = q.lstrip("#")
-        if clean_q.isdigit():
-           # numeric search matches ID exactly, but still OR with the fuzzy fields
-            id_num = int(clean_q)
-            id_filter = [Ticket.id == id_num, Ticket.project_id == id_num]
-
-        tickets = (
-            Ticket.query.filter(
-                or_(
-                    *id_filter,
-                    Ticket.subject.ilike(like),
-                    Ticket.description.ilike(like),
-                    # client fields (first/last/email)
-                    Ticket.client.has(
-                        or_(
-                            Client.first_name.ilike(like),
-                            Client.last_name.ilike(like),
-                            Client.email.ilike(like),
-                            # company name
-                            Client.company.has(Company.name.ilike(like)),
-                        )
-                    ),
-                    # any note content contains text
-                    Ticket.notes.any(TicketNote.content.ilike(like)),
-                )
+        
+        # 1. Check for explicit hashtag search (e.g., "#21", "#1") -> Project ID match
+        if q.startswith("#") and q[1:].isdigit():
+            project_id_num = int(q[1:])
+            tickets = (
+                Ticket.query.filter(Ticket.project_id == project_id_num)
+                .order_by(Ticket.created_at.desc())
+                .all()
             )
-            .order_by(Ticket.created_at.desc())
-            .limit(200)  # safety cap; adjust as you like or add pagination
-            .all()
-        )
+        
+        # 2. Check for exact numeric search (e.g., "1", "100", "263") -> Exact Ticket ID match ONLY
+        elif q.isdigit():
+            ticket_id_num = int(q)
+            tickets = (
+                Ticket.query.filter(Ticket.id == ticket_id_num)
+                .order_by(Ticket.created_at.desc())
+                .all()
+            )
+            
+        # 3. Text/Name search -> Subject, Description, Project Name, Requestor/Client, Notes
+        else:
+            tickets = (
+                Ticket.query.filter(
+                    or_(
+                        Ticket.subject.ilike(like),
+                        Ticket.description.ilike(like),
+                        # Match Project Name
+                        Ticket.project.has(Project.name.ilike(like)),
+                        # Match Requestor Email directly
+                        Ticket.requestor_email.ilike(like),
+                        # Match Client First/Last Name, Email, and Company Name
+                        Ticket.client.has(
+                            or_(
+                                Client.first_name.ilike(like),
+                                Client.last_name.ilike(like),
+                                Client.email.ilike(like),
+                                Client.company.has(Company.name.ilike(like)),
+                            )
+                        ),
+                        # Match Note Content
+                        Ticket.notes.any(TicketNote.content.ilike(like)),
+                    )
+                )
+                .order_by(Ticket.created_at.desc())
+                .limit(200)
+                .all()
+            )
+
         total = len(tickets)
 
     return render_template("search_tickets.html", q=q, tickets=tickets, total=total)
