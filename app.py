@@ -782,7 +782,7 @@ def edit_ticket(id):
             send_assignment_email(ticket)
 
         flash("Ticket updated successfully!", "success")
-        return "Updated", 200
+        return redirect(url_for("view_ticket", id=ticket.id))
 
     return render_template("edit_ticket.html", ticket=ticket, update_form=update_form)
 
