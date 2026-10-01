@@ -25,7 +25,7 @@
             <div class="d-flex flex-wrap align-items-center gap-2" style="gap: 10px;">
                 <!-- Search Box -->
                 <div class="input-group input-group-sm" style="max-width: 220px;">
-                    <input type="text" id="ticketSearchInput" placeholder="Search #, name, subject" class="form-control">
+                    <input type="text" id="ticketSearchInput" placeholder="Search #, name, subject" class="form-control" oninput="applyFilters();">
                     <div class="input-group-append">
                         <button class="btn btn-primary" type="button" onclick="searchTicket();">
                             <i class="fas fa-search"></i>
@@ -147,7 +147,8 @@
                         <tr class="ticket-item" 
                             data-tech="{{ ticket.assigned_tech.username if ticket.assigned_tech else 'unassigned' }}"
                             data-status="{{ ticket.status | lower }}"
-                            data-duedate="{{ ticket.due_date | ymd }}">
+                            data-duedate="{{ ticket.due_date | ymd }}"
+                            data-notes="{% for note in ticket.notes %}{{ note.content | lower }} {% endfor %}">
                             <td class="text-center align-middle">
                                 <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="ticket-select-checkbox" onchange="updateTicketCounts()">
                             </td>
@@ -326,64 +327,132 @@
     }
 
 function searchTicket() {
-    const input = document.getElementById("ticketSearchInput").value.trim();
-    if (!input) {
-        alert("Please enter a ticket #, #project, or search term.");
-        return;
-    }
+    applyFilters();
+}
 
-    // Clear previous highlights
-    document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
+function applyFilters() {
+    const selectedTech = document.getElementById("techFilterSelect").value;
+    const selectedStatus = document.getElementById("statusFilterSelect").value;
+    const selectedDate = document.getElementById("dateFilterSelect").value;
 
-    let found = false;
-    const lowerInput = input.toLowerCase();
+    const customStart = document.getElementById("customStartDate").value;
+    const customEnd = document.getElementById("customEndDate").value;
+    
+    // Get search input term
+    const searchInput = document.getElementById("ticketSearchInput").value.trim();
+    const lowerSearchInput = searchInput.toLowerCase();
+
+    localStorage.setItem("dashboard_tech_filter", selectedTech);
+    localStorage.setItem("dashboard_status_filter", selectedStatus);
+    localStorage.setItem("dashboard_date_filter", selectedDate);
+    localStorage.setItem("dashboard_custom_start", customStart);
+    localStorage.setItem("dashboard_custom_end", customEnd);
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    const startDateObj = parseLocalDate(customStart);
+    const endDateObj = parseLocalDate(customEnd);
 
     document.querySelectorAll(".ticket-item").forEach(item => {
-        const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-        const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-        const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-        
-        let match = false;
+        const itemTech = item.getAttribute("data-tech");
+        const itemStatus = item.getAttribute("data-status");
+        const itemDueDateStr = item.getAttribute("data-duedate");
+        const itemDueDate = parseLocalDate(itemDueDateStr);
 
-        // 1. Hashtag Project ID Search (e.g. #21)
-        if (input.startsWith("#") && !isNaN(input.slice(1))) {
-            const targetProjId = input.slice(1);
-            // Matches 'project: name #21' or 'proj: name' pattern in details
-            const projPattern = new RegExp(`#${targetProjId}\\b`);
-            if (projPattern.test(detailsText)) {
-                match = true;
+        // --- Tech Filter ---
+        const techMatch = (selectedTech === "all") || (itemTech === selectedTech);
+
+        // --- Status Filter ---
+        let statusMatch = false;
+        if (selectedStatus === "all") {
+            statusMatch = true;
+        } else if (selectedStatus === "hide_closed") {
+            statusMatch = (itemStatus !== "closed" && itemStatus !== "completed");
+        } else {
+            statusMatch = (itemStatus === selectedStatus);
+        }
+
+        // --- Date Filter ---
+        let dateMatch = false;
+        if (selectedDate === "all") {
+            dateMatch = true;
+        } else if (selectedDate === "today") {
+            dateMatch = (itemDueDate && itemDueDate.getTime() === today.getTime());
+        } else if (selectedDate === "tomorrow") {
+            dateMatch = (itemDueDate && itemDueDate.getTime() === tomorrow.getTime());
+        } else if (selectedDate === "next_7_days") {
+            dateMatch = (itemDueDate && itemDueDate.getTime() >= today.getTime() && itemDueDate.getTime() <= nextWeek.getTime());
+        } else if (selectedDate === "overdue") {
+            dateMatch = (itemDueDate && itemDueDate.getTime() < today.getTime());
+        } else if (selectedDate === "custom") {
+            if (itemDueDate) {
+                if (startDateObj && endDateObj) {
+                    dateMatch = (itemDueDate.getTime() >= startDateObj.getTime() && itemDueDate.getTime() <= endDateObj.getTime());
+                } else if (startDateObj) {
+                    dateMatch = (itemDueDate.getTime() >= startDateObj.getTime());
+                } else if (endDateObj) {
+                    dateMatch = (itemDueDate.getTime() <= endDateObj.getTime());
+                } else {
+                    dateMatch = true;
+                }
+            } else {
+                dateMatch = false;
             }
-        } 
-        // 2. Exact Ticket ID Search (e.g. 1, 100, 263)
-        else if (!isNaN(input)) {
-            // Check for exact ticket ID match at the start of subject (#1 - Subject)
-            const ticketIdPattern = new RegExp(`^#${input}\\b`);
-            const subjectTrimmed = item.querySelector(".ticket-subject")?.textContent.trim() || "";
-            if (ticketIdPattern.test(subjectTrimmed)) {
-                match = true;
-            }
-        } 
-        // 3. Name, Requestor, Subject, or Project Name Search
-        else {
-            if (ticketSubjectText.includes(lowerInput) || userText.includes(lowerInput) || detailsText.includes(lowerInput)) {
-                match = true;
+        } else if (selectedDate === "none") {
+            dateMatch = (!itemDueDate);
+        }
+
+        // --- Search Match Logic ---
+        let searchMatch = true;
+        if (searchInput !== "") {
+            searchMatch = false;
+            const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+            const notesText = item.getAttribute("data-notes")?.toLowerCase() || "";
+
+            // 1. Hashtag Project ID Search (e.g. #21) -> Filter by Project ID
+            if (searchInput.startsWith("#") && !isNaN(searchInput.slice(1))) {
+                const targetProjId = searchInput.slice(1);
+                const projPattern = new RegExp(`#${targetProjId}\\b`);
+                if (projPattern.test(detailsText)) {
+                    searchMatch = true;
+                }
+            } 
+            // 2. Exact Numeric Ticket ID Search (e.g. 1, 100, 263) -> Exact Ticket ID match
+            else if (!isNaN(searchInput)) {
+                const ticketIdPattern = new RegExp(`^#${searchInput}\\b`);
+                const subjectTrimmed = item.querySelector(".ticket-subject")?.textContent.trim() || "";
+                if (ticketIdPattern.test(subjectTrimmed)) {
+                    searchMatch = true;
+                }
+            } 
+            // 3. General Text Search -> Subject, Client, or Details
+            else {
+                if (ticketSubjectText.includes(lowerSearchInput) || userText.includes(lowerSearchInput) || detailsText.includes(lowerSearchInput) || notesText.includes(lowerSearchInput)) {
+                    searchMatch = true;
+                }
             }
         }
 
-            if (match) {
-                        item.classList.add("highlight");
-                        item.style.display = "";
-                        item.scrollIntoView({ behavior: "smooth", block: "center" });
-                        found = true;
-                    }
-                });
+        // Display ticket only if ALL filter conditions pass
+        if (techMatch && statusMatch && dateMatch && searchMatch) {
+            item.style.display = "";
+        } else {
+            item.style.display = "none";
+        }
+    });
 
-                if (!found) {
-                    alert("No matching ticket found.");
-                } else {
-                    updateTicketCounts();
-                }
-            }
+    // Update the counter badges on the dashboard header
+    updateTicketCounts();
+}
 
 function updateTicketCounts() {
         const visibleRows = Array.from(document.querySelectorAll('.ticket-item')).filter(row => row.style.display !== 'none');
