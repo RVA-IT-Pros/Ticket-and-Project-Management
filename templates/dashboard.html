@@ -9,12 +9,12 @@
             <h3 class="m-0 font-weight-bold text-dark">Ticket Board</h3>
         </div>
         <div class="col-md-6 text-md-right mt-2 mt-md-0">
-                    <a href="{{ url_for('mass_complete_automated_tickets') }}" class="btn btn-warning btn-sm mr-2">
-                        <i class="fas fa-check-double mr-1"></i> Mass Complete Tickets
-                    </a>
-                    <a href="{{ url_for('download_tickets_excel') }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-file-excel mr-1"></i> Download Open Tickets
-                    </a>
+            <a href="{{ url_for('mass_complete_automated_tickets') }}" class="btn btn-warning btn-sm mr-2">
+                <i class="fas fa-check-double mr-1"></i> Mass Complete Tickets
+            </a>
+            <a href="{{ url_for('download_tickets_excel') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-file-excel mr-1"></i> Download Open Tickets
+            </a>
         </div>
     </div>
 
@@ -30,102 +30,126 @@
                         <button class="btn btn-primary" type="button" onclick="searchTicket();">
                             <i class="fas fa-search"></i>
                         </button>
+    <div class="card card-outline card-primary shadow-sm">
+        <div class="card-header bg-white">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2" style="gap: 10px;">
+                <!-- Filters Section (Left) -->
+                <div class="d-flex flex-wrap align-items-center gap-2" style="gap: 10px;">
+                    <!-- Search Box -->
+                    <div class="input-group input-group-sm" style="max-width: 220px;">
+                        <input type="text" id="ticketSearchInput" placeholder="Search #, name, subject" class="form-control">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" onclick="searchTicket();">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Tech Filter -->
-                <div class="input-group input-group-sm" style="max-width: 180px;">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text bg-light" for="techFilterSelect"><i class="fas fa-user-tag mr-1"></i> Tech</label>
-                    </div>
-                    <select id="techFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
-                        <option value="all" selected>All Technicians</option>
-                        <option value="unassigned">Unassigned</option>
-                        {% set tech_list = [] %}
-                        {% for ticket in tickets %}
-                            {% if ticket.assigned_tech and ticket.assigned_tech.username not in tech_list %}
-                                {% set _ = tech_list.append(ticket.assigned_tech.username) %}
-                                <option value="{{ ticket.assigned_tech.username }}">{{ ticket.assigned_tech.username }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Status Filter -->
-                <div class="input-group input-group-sm" style="max-width: 170px;">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text bg-light" for="statusFilterSelect"><i class="fas fa-filter mr-1"></i> Status</label>
-                    </div>
-                    <select id="statusFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
-                        <option value="all">All Statuses</option>
-                        <option value="hide_closed">Hide Closed</option>
-                        <option value="open">Open</option>
-                        <option value="in progress">In Progress</option>
-                        <option value="touched">Touched</option>
-                        <option value="on hold">On Hold</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </div>
-
-                <!-- Due Date Filter -->
-                <div class="input-group input-group-sm" style="max-width: 180px;">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text bg-light" for="dateFilterSelect"><i class="fas fa-calendar-alt mr-1"></i> Due</label>
-                    </div>
-                    <select id="dateFilterSelect" class="custom-select custom-select-sm" onchange="toggleCustomDateInputs(); applyFilters();">
-                        <option value="all" selected>All Dates</option>
-                        <option value="today">Due Today</option>
-                        <option value="tomorrow">Due Tomorrow</option>
-                        <option value="next_7_days">Next 7 Days</option>
-                        <option value="overdue">Past Due</option>
-                        <option value="custom">Custom Range</option>
-                        <option value="none">No Due Date</option>
-                    </select>
-                </div>
-
-                <!-- Custom Date Inputs -->
-                <div id="customDateContainer" class="d-none align-items-center" style="gap: 5px;">
-                    <input type="date" id="customStartDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
-                    <span class="small text-muted">to</span>
-                    <input type="date" id="customEndDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
-                </div>
-            </div>
-
-            <!-- Right Toolbar Section (Count Badges + Assign To Control) -->
-            <div class="d-flex align-items-center ml-auto gap-2" style="gap: 10px;">
-                <!-- Matching Ticket Count Badge -->
-                <span class="badge badge-info p-2 font-weight-bold" id="ticketCountBadge" style="font-size: 0.85rem;">
-                    0 Tickets
-                </span>
-
-                <!-- Selected Checkbox Count Badge (Hidden by default until items are checked) -->
-                <span class="badge badge-warning p-2 font-weight-bold d-none text-dark" id="selectedCountBadge" style="font-size: 0.85rem;">
-                    0 Selected
-                </span>
-
-                <!-- Mass Assign Control Bar -->
-                <div class="input-group input-group-sm" style="max-width: 280px;">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-warning text-dark font-weight-bold"><i class="fas fa-users-cog mr-1"></i> Assign To</span>
-                    </div>
-                    <select name="assigned_tech_id" class="custom-select custom-select-sm" required>
-                        <option value="0">Unassigned</option>
-                        {% if technicians %}
-                            {% for tech in technicians %}
-                                <option value="{{ tech.id }}">{{ tech.username }}</option>
+                    <!-- Tech Filter -->
+                    <div class="input-group input-group-sm" style="max-width: 180px;">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text bg-light" for="techFilterSelect"><i class="fas fa-user-tag mr-1"></i> Tech</label>
+                        </div>
+                        <select id="techFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
+                            <option value="all" selected>All Technicians</option>
+                            <option value="unassigned">Unassigned</option>
+                            {% set tech_list = [] %}
+                            {% for ticket in tickets %}
+                                {% if ticket.assigned_tech and ticket.assigned_tech.username not in tech_list %}
+                                    {% set _ = tech_list.append(ticket.assigned_tech.username) %}
+                                    <option value="{{ ticket.assigned_tech.username }}">{{ ticket.assigned_tech.username }}</option>
+                                {% endif %}
                             {% endfor %}
-                        {% endif %}
-                    </select>
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-warning btn-sm font-weight-bold">
-                            Apply
-                        </button>
+                        </select>
+                    </div>
+
+                    <!-- Project Filter -->
+                    <div class="input-group input-group-sm" style="max-width: 180px;">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text bg-light" for="projectFilterSelect"><i class="fas fa-project-diagram mr-1"></i> Proj</label>
+                        </div>
+                        <select id="projectFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
+                            <option value="all" selected>All Tickets</option>
+                            <option value="with_project">With Project</option>
+                            <option value="no_project">No Project (General)</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="input-group input-group-sm" style="max-width: 170px;">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text bg-light" for="statusFilterSelect"><i class="fas fa-filter mr-1"></i> Status</label>
+                        </div>
+                        <select id="statusFilterSelect" class="custom-select custom-select-sm" onchange="applyFilters()">
+                            <option value="all">All Statuses</option>
+                            <option value="hide_closed">Hide Closed</option>
+                            <option value="open">Open</option>
+                            <option value="in progress">In Progress</option>
+                            <option value="touched">Touched</option>
+                            <option value="on hold">On Hold</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+
+                    <!-- Due Date Filter -->
+                    <div class="input-group input-group-sm" style="max-width: 180px;">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text bg-light" for="dateFilterSelect"><i class="fas fa-calendar-alt mr-1"></i> Due</label>
+                        </div>
+                        <select id="dateFilterSelect" class="custom-select custom-select-sm" onchange="toggleCustomDateInputs(); applyFilters();">
+                            <option value="all" selected>All Dates</option>
+                            <option value="today">Due Today</option>
+                            <option value="tomorrow">Due Tomorrow</option>
+                            <option value="next_7_days">Next 7 Days</option>
+                            <option value="overdue">Past Due</option>
+                            <option value="custom">Custom Range</option>
+                            <option value="none">No Due Date</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom Date Inputs -->
+                    <div id="customDateContainer" class="d-none align-items-center" style="gap: 5px;">
+                        <input type="date" id="customStartDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+                        <span class="small text-muted">to</span>
+                        <input type="date" id="customEndDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+                    </div>
+                </div>
+
+                <!-- Right Toolbar Section (Count Badges + Assign To Control) -->
+                <div class="d-flex align-items-center ml-auto gap-2" style="gap: 10px;">
+                    <!-- Matching Ticket Count Badge -->
+                    <span class="badge badge-info p-2 font-weight-bold" id="ticketCountBadge" style="font-size: 0.85rem;">
+                        0 Tickets
+                    </span>
+
+                    <!-- Selected Checkbox Count Badge -->
+                    <span class="badge badge-warning p-2 font-weight-bold d-none text-dark" id="selectedCountBadge" style="font-size: 0.85rem;">
+                        0 Selected
+                    </span>
+
+                    <!-- Mass Assign Control Bar -->
+                    <div class="input-group input-group-sm" style="max-width: 280px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-warning text-dark font-weight-bold"><i class="fas fa-users-cog mr-1"></i> Assign To</span>
+                        </div>
+                        <select name="assigned_tech_id" class="custom-select custom-select-sm" required>
+                            <option value="0">Unassigned</option>
+                            {% if technicians %}
+                                {% for tech in technicians %}
+                                    <option value="{{ tech.id }}">{{ tech.username }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-warning btn-sm font-weight-bold">
+                                Apply
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-        
+            
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -149,6 +173,7 @@
                             data-status="{{ ticket.status | lower }}"
                             data-duedate="{{ ticket.due_date | ymd }}"
                             data-notes="{% for note in ticket.notes %}{{ note.content | lower }} {% endfor %}">
+                            data-hasproject="{% if ticket.project_id %}true{% else %}false{% endif %}">
                             <td class="text-center align-middle">
                                 <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="ticket-select-checkbox" onchange="updateTicketCounts()">
                             </td>
@@ -196,7 +221,8 @@
                             </td>
                             <td class="align-middle text-center btn-view">
                                 <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-sm">
-                                    <i class="fas fa-eye mr-1"></i> View </a>
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -229,7 +255,6 @@
     }
 
     function toggleSelectAll(master) {
-        // Only select currently visible ticket checkboxes
         document.querySelectorAll('.ticket-item').forEach(row => {
             if (row.style.display !== 'none') {
                 const cb = row.querySelector('.ticket-select-checkbox');
@@ -247,6 +272,7 @@
         const selectedTech = document.getElementById("techFilterSelect").value;
         const selectedStatus = document.getElementById("statusFilterSelect").value;
         const selectedDate = document.getElementById("dateFilterSelect").value;
+        const selectedProject = document.getElementById("projectFilterSelect").value;
 
         const customStart = document.getElementById("customStartDate").value;
         const customEnd = document.getElementById("customEndDate").value;
@@ -254,6 +280,7 @@
         localStorage.setItem("dashboard_tech_filter", selectedTech);
         localStorage.setItem("dashboard_status_filter", selectedStatus);
         localStorage.setItem("dashboard_date_filter", selectedDate);
+        localStorage.setItem("dashboard_project_filter", selectedProject);
         localStorage.setItem("dashboard_custom_start", customStart);
         localStorage.setItem("dashboard_custom_end", customEnd);
 
@@ -273,9 +300,20 @@
             const itemTech = item.getAttribute("data-tech");
             const itemStatus = item.getAttribute("data-status");
             const itemDueDateStr = item.getAttribute("data-duedate");
+            const itemHasProject = item.getAttribute("data-hasproject") === "true";
             const itemDueDate = parseLocalDate(itemDueDateStr);
 
             const techMatch = (selectedTech === "all") || (itemTech === selectedTech);
+
+            // Project Filter Match Logic
+            let projectMatch = false;
+            if (selectedProject === "all") {
+                projectMatch = true;
+            } else if (selectedProject === "with_project") {
+                projectMatch = itemHasProject;
+            } else if (selectedProject === "no_project") {
+                projectMatch = !itemHasProject;
+            }
 
             let statusMatch = false;
             if (selectedStatus === "all") {
@@ -315,14 +353,13 @@
                 dateMatch = (!itemDueDate);
             }
 
-            if (techMatch && statusMatch && dateMatch) {
+            if (techMatch && statusMatch && dateMatch && projectMatch) {
                 item.style.display = "";
             } else {
                 item.style.display = "none";
             }
         });
 
-        // Trigger count update directly after applying filters
         updateTicketCounts();
     }
 
@@ -453,21 +490,70 @@ function applyFilters() {
     // Update the counter badges on the dashboard header
     updateTicketCounts();
 }
+    function searchTicket() {
+        const input = document.getElementById("ticketSearchInput").value.trim();
+        if (!input) {
+            alert("Please enter a ticket #, #project, or search term.");
+            return;
+        }
 
-function updateTicketCounts() {
+        document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
+
+        let found = false;
+        const lowerInput = input.toLowerCase();
+
+        document.querySelectorAll(".ticket-item").forEach(item => {
+            const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+            
+            let match = false;
+
+            if (input.startsWith("#") && !isNaN(input.slice(1))) {
+                const targetProjId = input.slice(1);
+                const projPattern = new RegExp(`#${targetProjId}\\b`);
+                if (projPattern.test(detailsText)) {
+                    match = true;
+                }
+            } else if (!isNaN(input)) {
+                const ticketIdPattern = new RegExp(`^#${input}\\b`);
+                const subjectTrimmed = item.querySelector(".ticket-subject")?.textContent.trim() || "";
+                if (ticketIdPattern.test(subjectTrimmed)) {
+                    match = true;
+                }
+            } else {
+                if (ticketSubjectText.includes(lowerInput) || userText.includes(lowerInput) || detailsText.includes(lowerInput)) {
+                    match = true;
+                }
+            }
+
+            if (match) {
+                item.classList.add("highlight");
+                item.style.display = "";
+                item.scrollIntoView({ behavior: "smooth", block: "center" });
+                found = true;
+            }
+        });
+
+        if (!found) {
+            alert("No matching ticket found.");
+        } else {
+            updateTicketCounts();
+        }
+    }
+
+    function updateTicketCounts() {
         const visibleRows = Array.from(document.querySelectorAll('.ticket-item')).filter(row => row.style.display !== 'none');
         const selectedCount = visibleRows.filter(row => {
             const cb = row.querySelector('.ticket-select-checkbox');
             return cb && cb.checked;
         }).length;
 
-        // Update Visible Tickets Counter Badge
         const countBadge = document.getElementById('ticketCountBadge');
         if (countBadge) {
             countBadge.textContent = `${visibleRows.length} Ticket${visibleRows.length === 1 ? '' : 's'}`;
         }
 
-        // Update Selected Checkboxes Badge
         const selectedBadge = document.getElementById('selectedCountBadge');
         if (selectedBadge) {
             if (selectedCount > 0) {
@@ -479,11 +565,11 @@ function updateTicketCounts() {
         }
     }
 
-    // Event listeners on load
     document.addEventListener("DOMContentLoaded", function () {
         const savedTech = localStorage.getItem("dashboard_tech_filter");
         const savedStatus = localStorage.getItem("dashboard_status_filter");
         const savedDate = localStorage.getItem("dashboard_date_filter");
+        const savedProject = localStorage.getItem("dashboard_project_filter");
         const savedStart = localStorage.getItem("dashboard_custom_start");
         const savedEnd = localStorage.getItem("dashboard_custom_end");
 
@@ -508,6 +594,13 @@ function updateTicketCounts() {
             const dateSelect = document.getElementById("dateFilterSelect");
             if ([...dateSelect.options].some(opt => opt.value === savedDate)) {
                 dateSelect.value = savedDate;
+            }
+        }
+        
+        if (savedProject) {
+            const projectSelect = document.getElementById("projectFilterSelect");
+            if ([...projectSelect.options].some(opt => opt.value === savedProject)) {
+                projectSelect.value = savedProject;
             }
         }
 
