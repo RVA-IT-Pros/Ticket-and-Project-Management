@@ -30,20 +30,8 @@
                         <button class="btn btn-primary" type="button" onclick="searchTicket();">
                             <i class="fas fa-search"></i>
                         </button>
-    <div class="card card-outline card-primary shadow-sm">
-        <div class="card-header bg-white">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2" style="gap: 10px;">
-                <!-- Filters Section (Left) -->
-                <div class="d-flex flex-wrap align-items-center gap-2" style="gap: 10px;">
-                    <!-- Search Box -->
-                    <div class="input-group input-group-sm" style="max-width: 220px;">
-                        <input type="text" id="ticketSearchInput" placeholder="Search #, name, subject" class="form-control">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="button" onclick="searchTicket();">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
                     </div>
+                </div>
 
                     <!-- Tech Filter -->
                     <div class="input-group input-group-sm" style="max-width: 180px;">
@@ -172,7 +160,7 @@
                             data-tech="{{ ticket.assigned_tech.username if ticket.assigned_tech else 'unassigned' }}"
                             data-status="{{ ticket.status | lower }}"
                             data-duedate="{{ ticket.due_date | ymd }}"
-                            data-notes="{% for note in ticket.notes %}{{ note.content | lower }} {% endfor %}">
+                            data-notes="{% for note in ticket.notes %}{{ note.content | lower }} {% endfor %}"
                             data-hasproject="{% if ticket.project_id %}true{% else %}false{% endif %}">
                             <td class="text-center align-middle">
                                 <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="ticket-select-checkbox" onchange="updateTicketCounts()">
@@ -364,7 +352,11 @@
     }
 
 function searchTicket() {
-    applyFilters();
+    const input = document.getElementById("ticketSearchInput").value.trim();
+    if (!input) return;
+    
+    // Redirect directly to the full search endpoint
+    window.location.href = "{{ url_for('search_tickets') }}?q=" + encodeURIComponent(input);
 }
 
 function applyFilters() {
@@ -450,16 +442,19 @@ function applyFilters() {
         let searchMatch = true;
         if (searchInput !== "") {
             searchMatch = false;
-            const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-            const notesText = item.getAttribute("data-notes")?.toLowerCase() || "";
 
             // 1. Hashtag Project ID Search (e.g. #21) -> Filter by Project ID
             if (searchInput.startsWith("#") && !isNaN(searchInput.slice(1))) {
                 const targetProjId = searchInput.slice(1);
-                const projPattern = new RegExp(`#${targetProjId}\\b`);
-                if (projPattern.test(detailsText)) {
+                const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
+                const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+
+                // Check if project # matches explicitly in Context or Details meta
+                const projPattern = new RegExp(`proj:.*#${targetProjId}\\b|project:.*#${targetProjId}\\b|#${targetProjId}\\b`);
+                
+                // Exclude subject line ticket ID match by checking if the row actually has a project
+                const hasProject = item.getAttribute("data-hasproject") === "true";
+                if (hasProject && (projPattern.test(contextText) || projPattern.test(detailsText))) {
                     searchMatch = true;
                 }
             } 
@@ -473,6 +468,11 @@ function applyFilters() {
             } 
             // 3. General Text Search -> Subject, Client, or Details
             else {
+                const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+                const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+                const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+                const notesText = item.getAttribute("data-notes")?.toLowerCase() || "";
+
                 if (ticketSubjectText.includes(lowerSearchInput) || userText.includes(lowerSearchInput) || detailsText.includes(lowerSearchInput) || notesText.includes(lowerSearchInput)) {
                     searchMatch = true;
                 }

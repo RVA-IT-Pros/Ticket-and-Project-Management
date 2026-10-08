@@ -2041,7 +2041,6 @@ def search_tickets():
     total = 0
 
     if q:
-        like = f"%{q}%"
         
         # 1. Check for explicit hashtag search (e.g., "#21", "#1") -> Project ID match
         if q.startswith("#") and q[1:].isdigit():
@@ -2063,6 +2062,7 @@ def search_tickets():
             
         # 3. Text/Name search -> Subject, Description, Project Name, Requestor/Client, Notes
         else:
+            like = f"%{q}%"
             tickets = (
                 Ticket.query.filter(
                     or_(
