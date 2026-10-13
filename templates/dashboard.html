@@ -236,7 +236,7 @@
             </div>
             <form method="POST" action="{{ url_for('merge_tickets') }}">
                 <div class="modal-body">
-                    <p class="text-muted small">Select the ticket to merge (source) and the primary ticket to merge into (target). All notes will be transferred and the source ticket will be deleted.</p>
+                    <p class="text-muted small">Select the ticket to merge (source) and the primary ticket to merge into (target). All notes will be transferred, and the source ticket will be marked as <strong>Closed</strong> with a consolidation note.</p>
                     
                     <div class="form-group mb-3">
                         <label class="font-weight-bold text-danger">Source Ticket (Will be deleted):</label>

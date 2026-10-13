@@ -269,7 +269,7 @@
             </div>
             <form method="POST" action="{{ url_for('merge_tickets') }}">
                 <div class="modal-body">
-                    <p class="text-muted small">This will merge <strong>Ticket #{{ ticket.id }}</strong> into a primary ticket. All notes will be moved, and this ticket will be deleted.</p>
+                    <p class="text-muted small">This will merge <strong>Ticket #{{ ticket.id }}</strong> into a primary ticket. All notes will be moved, and this ticket will be marked as <strong>Closed</strong> with a consolidation note.</p>
                     
                     <input type="hidden" name="source_ticket_id" value="{{ ticket.id }}">
 

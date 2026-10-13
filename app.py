@@ -864,33 +864,55 @@ def merge_tickets():
     source_ticket = Ticket.query.get_or_404(source_id)
     target_ticket = Ticket.query.get_or_404(target_id)
 
-    # 1. Reassign all notes to target
+    now_utc = datetime.now(UTC)
+
+    # 1. Reassign all existing notes from source ticket to target ticket
     TicketNote.query.filter_by(ticket_id=source_ticket.id).update(
         {"ticket_id": target_ticket.id}
     )
 
-    # 2. Add consolidation summary note
-    merged_summary_note = (
+    # 2. Add consolidation summary note onto the TARGET ticket
+    target_summary_content = (
         f"**[Ticket Consolidated]** Merged Ticket #{source_ticket.id}\n"
         f"**Original Subject:** {source_ticket.subject}\n"
         f"**Original Requestor:** {source_ticket.requestor_email or 'N/A'}\n"
         f"**Original Description:**\n{source_ticket.description or 'No description provided.'}"
     )
 
-    consolidation_note = TicketNote(
-        content=merged_summary_note,
+    target_note = TicketNote(
+        content=target_summary_content,
         ticket_id=target_ticket.id,
         user_id=current_user.id,
-        note_start_time=datetime.now(UTC),
-        note_finish_time=datetime.now(UTC),
+        note_start_time=now_utc,
+        note_finish_time=now_utc,
+        is_resolution=False,
     )
-    db.session.add(consolidation_note)
+    db.session.add(target_note)
 
-    # 3. Clean up source ticket
-    db.session.delete(source_ticket)
+    # 3. Add mandatory closure & consolidation note onto the SOURCE ticket
+    source_closure_content = (
+        f"**[Ticket Closed - Consolidated]** This ticket has been closed and consolidated into **Ticket #{target_ticket.id}** "
+        f"('{target_ticket.subject}'). All previous notes have been transferred to Ticket #{target_ticket.id}."
+    )
+
+    source_note = TicketNote(
+        content=source_closure_content,
+        ticket_id=source_ticket.id,
+        user_id=current_user.id,
+        note_start_time=now_utc,
+        note_finish_time=now_utc,
+        is_resolution=True,  # Marked as resolution note so completion state is valid
+    )
+    db.session.add(source_note)
+
+    # 4. Mark the source ticket as Closed (instead of deleting it)
+    source_ticket.status = "Closed"
+    source_ticket.complete = True
+    source_ticket.completed_at = now_utc
+
     db.session.commit()
 
-    flash(f"Successfully consolidated Ticket #{source_id} into Ticket #{target_id}.", "success")
+    flash(f"Successfully consolidated Ticket #{source_id} into Ticket #{target_id}. Ticket #{source_id} is now closed.", "success")
     return redirect(url_for("view_ticket", id=target_ticket.id))
 
 
