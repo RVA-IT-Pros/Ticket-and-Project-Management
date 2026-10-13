@@ -2065,7 +2065,7 @@ def search_tickets():
             like = f"%{q}%"
             tickets = (
                 Ticket.query.filter(
-                    or_(
+                    or_( #ANDREW YOU ARE THE BEST!!!
                         Ticket.subject.ilike(like),
                         Ticket.description.ilike(like),
                         # Match Project Name
