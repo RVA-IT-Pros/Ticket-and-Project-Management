@@ -205,6 +205,9 @@
                 <button type="button" class="btn btn-outline-dark btn-block" onclick="printTicket()">
                     <i class="fas fa-print mr-1"></i> Print Ticket
                 </button>
+                <button type="button" class="btn btn-outline-info btn-block" data-bs-toggle="modal" data-bs-target="#viewMergeModal">
+                    <i class="fas fa-compress-alt mr-1"></i> Consolidate Ticket
+                </button>
             </div>
         </div>
 
@@ -251,6 +254,40 @@
                     {% endif %}
                 </ul>
             </div>
+        </div>
+    </div>
+</div>
+<!-- Consolidate Ticket Modal -->
+<div class="modal fade no-print" id="viewMergeModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-compress-alt mr-2"></i>Consolidate Ticket #{{ ticket.id }}</h5>
+                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('merge_tickets') }}">
+                <div class="modal-body">
+                    <p class="text-muted small">This will merge <strong>Ticket #{{ ticket.id }}</strong> into a primary ticket. All notes will be moved, and this ticket will be deleted.</p>
+                    
+                    <input type="hidden" name="source_ticket_id" value="{{ ticket.id }}">
+
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-success">Select Primary Target Ticket:</label>
+                        <select name="target_ticket_id" class="custom-select form-control" required>
+                            <option value="" disabled selected>-- Select Target Ticket --</option>
+                            {% for t in all_tickets %}
+                                <option value="{{ t.id }}">#{{ t.id }} - {{ t.subject }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info btn-sm font-weight-bold" onclick="return confirm('Are you sure you want to merge this ticket? Ticket #{{ ticket.id }} will be deleted.');">Consolidate Into Target</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
