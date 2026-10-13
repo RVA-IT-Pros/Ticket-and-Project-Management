@@ -524,6 +524,8 @@ def view_ticket(id):
     note_form = AddNoteForm()
     eastern = timezone("US/Eastern")  # Define the Eastern timezone
 
+    all_tickets = Ticket.query.filter(Ticket.id != id).order_by(Ticket.id.desc()).all()
+
     # Safely access the project and company (if they exist)
     project = ticket.project
     company = project.company if project else None
@@ -617,6 +619,7 @@ def view_ticket(id):
         note_form=note_form,
         project=project,
         company=company,
+        all_tickets=all_tickets,
     )
 
 
@@ -843,6 +846,52 @@ def delete_note(note_id):
     db.session.commit()
     flash("Ticket Note deleted successfully!", "success")
     return redirect(url_for("view_ticket", id=note.ticket_id))
+
+@app.route("/merge_tickets", methods=["POST"])
+@login_required
+def merge_tickets():
+    source_id = request.form.get("source_ticket_id", type=int)
+    target_id = request.form.get("target_ticket_id", type=int)
+
+    if not source_id or not target_id:
+        flash("Both Source and Target tickets must be selected.", "danger")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    if source_id == target_id:
+        flash("Cannot merge a ticket into itself.", "warning")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    source_ticket = Ticket.query.get_or_404(source_id)
+    target_ticket = Ticket.query.get_or_404(target_id)
+
+    # 1. Reassign all notes to target
+    TicketNote.query.filter_by(ticket_id=source_ticket.id).update(
+        {"ticket_id": target_ticket.id}
+    )
+
+    # 2. Add consolidation summary note
+    merged_summary_note = (
+        f"**[Ticket Consolidated]** Merged Ticket #{source_ticket.id}\n"
+        f"**Original Subject:** {source_ticket.subject}\n"
+        f"**Original Requestor:** {source_ticket.requestor_email or 'N/A'}\n"
+        f"**Original Description:**\n{source_ticket.description or 'No description provided.'}"
+    )
+
+    consolidation_note = TicketNote(
+        content=merged_summary_note,
+        ticket_id=target_ticket.id,
+        user_id=current_user.id,
+        note_start_time=datetime.now(UTC),
+        note_finish_time=datetime.now(UTC),
+    )
+    db.session.add(consolidation_note)
+
+    # 3. Clean up source ticket
+    db.session.delete(source_ticket)
+    db.session.commit()
+
+    flash(f"Successfully consolidated Ticket #{source_id} into Ticket #{target_id}.", "success")
+    return redirect(url_for("view_ticket", id=target_ticket.id))
 
 
 @app.route("/toggle_resolution/<int:note_id>", methods=["POST"])
