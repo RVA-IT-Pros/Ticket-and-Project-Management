@@ -61,10 +61,6 @@
                     </div>
                 {% endif %}
 
-                <div class="mt-3 small text-muted">
-                    <strong>Requestor Email:</strong> {{ ticket.requestor_email }}
-                </div>
-
                 {% if ticket.requestor_email %}
                     {% set meeting_title = COMPANY_NAME ~ " - Ticket #" ~ ticket.id ~ " - " ~ ticket.subject %}
                     {% set meeting_body = "Details: " ~ ticket.description %}
@@ -211,20 +207,52 @@
             </div>
         </div>
 
-        <!-- Ticket Metadata Card -->
-        <div class="card card-outline card-info shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="card-title font-weight-bold m-0"><i class="fas fa-info-circle mr-2 text-info"></i>Ticket Overview</h5>
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-light font-weight-bold">
+            <i class="fas fa-info-circle mr-1"></i> Ticket Information
+        </div>
+        <div class="card-body">
+            <div class="row mb-2">
+                <div class="col-sm-5 text-muted font-weight-bold">Company:</div>
+                <div class="col-sm-7">
+                    {% if ticket.company %}
+                        <span class="badge badge-light border text-dark font-weight-bold">{{ ticket.company.name }}</span>
+                    {% elif ticket.client and ticket.client.company %}
+                        <span class="badge badge-light border text-dark">{{ ticket.client.company.name }}</span>
+                    {% else %}
+                        <span class="text-muted">N/A</span>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="text-muted"><i class="fas fa-user-tag mr-2"></i>Assigned Tech</span>
-                        {% if ticket.assigned_tech %}
-                            <span class="badge badge-primary px-2 py-1">{{ ticket.assigned_tech.username }}</span>
-                        {% else %}
-                            <span class="badge badge-secondary px-2 py-1">Unassigned</span>
+
+            <div class="row mb-2">
+                <div class="col-sm-5 text-muted font-weight-bold">Requestor:</div>
+                <div class="col-sm-7">
+                    {% if ticket.client %}
+                        {{ ticket.client.first_name }} {{ ticket.client.last_name }}
+                        {% if ticket.requestor_email %}
+                            <br><small class="text-muted">({{ ticket.requestor_email }})</small>
                         {% endif %}
+                    {% else %}
+                        {{ ticket.requestor_email or 'N/A' }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-5 text-muted font-weight-bold">Assigned Tech:</div>
+                <div class="col-sm-7">
+                    {% if ticket.assigned_tech %}
+                        <span class="badge text-white px-2 py-1" style="background-color: {{ ticket.assigned_tech.tech_color or '#007bff' }};">
+                            {{ ticket.assigned_tech.username }}
+                        </span>
+                    {% else %}
+                        <span class="badge badge-secondary">Unassigned</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <span class="text-muted"><i class="far fa-calendar-alt mr-2"></i>Due Date</span>

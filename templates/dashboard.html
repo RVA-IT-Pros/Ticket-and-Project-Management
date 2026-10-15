@@ -204,7 +204,22 @@
                                     General
                                 {% endif %}
                             </span> | 
-                            <span><strong>Client:</strong> {{ ticket.client.first_name }} {{ ticket.client.last_name }}</span>
+                            <span><strong>Client:</strong>
+                                {% if ticket.client %}
+                                    {{ ticket.client.first_name }} {{ ticket.client.last_name }}
+                                {% else %}
+                                    {{ ticket.requestor_email or 'N/A'}}
+                                {% endif %}
+                            </span>
+                            <span><strong>Company:</strong> 
+                                {% if ticket.company %}
+                                    <span class="badge badge-light border text-dark font-weight-bold">{{ ticket.company.name }}</span>
+                                {% elif ticket.client and ticket.client.company %}
+                                    <span class="badge badge-light border text-dark">{{ ticket.client.company.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </span>
                         </div>
                     </td>
 
