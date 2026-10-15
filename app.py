@@ -866,12 +866,20 @@ def merge_tickets():
 
     now_utc = datetime.now(UTC)
 
-    # 1. Reassign all existing notes from source ticket to target ticket
-    TicketNote.query.filter_by(ticket_id=source_ticket.id).update(
-        {"ticket_id": target_ticket.id}
-    )
+    # 1. Fetch all notes from the source ticket
+    source_notes = TicketNote.query.filter_by(ticket_id=source_ticket.id).all()
 
-    # 2. Add consolidation summary note onto the TARGET ticket
+    # 2. Reassign source notes to target ticket, stripping `is_resolution` status
+    for note in source_notes:
+        note.ticket_id = target_ticket.id
+        
+        # If this note was marked as a resolution on the source ticket,
+        # prepend a tag so technicians know its history, then unset `is_resolution`.
+        if note.is_resolution:
+            note.content = f"**[Former Resolution from Ticket #{source_ticket.id}]**\n{note.content}"
+            note.is_resolution = False  # 👈 Prevents auto-resolving the target ticket
+
+    # 3. Add consolidation summary note onto the TARGET ticket
     target_summary_content = (
         f"**[Ticket Consolidated]** Merged Ticket #{source_ticket.id}\n"
         f"**Original Subject:** {source_ticket.subject}\n"
@@ -889,7 +897,7 @@ def merge_tickets():
     )
     db.session.add(target_note)
 
-    # 3. Add mandatory closure & consolidation note onto the SOURCE ticket
+    # 4. Add mandatory closure & consolidation note onto the SOURCE ticket
     source_closure_content = (
         f"**[Ticket Closed - Consolidated]** This ticket has been closed and consolidated into **Ticket #{target_ticket.id}** "
         f"('{target_ticket.subject}'). All previous notes have been transferred to Ticket #{target_ticket.id}."
@@ -901,11 +909,11 @@ def merge_tickets():
         user_id=current_user.id,
         note_start_time=now_utc,
         note_finish_time=now_utc,
-        is_resolution=True,  # Marked as resolution note so completion state is valid
+        is_resolution=True,  # Kept True on the source ticket so it satisfies completion requirements
     )
     db.session.add(source_note)
 
-    # 4. Mark the source ticket as Closed (instead of deleting it)
+    # 5. Mark the source ticket as Closed
     source_ticket.status = "Closed"
     source_ticket.complete = True
     source_ticket.completed_at = now_utc
@@ -1693,12 +1701,14 @@ def admin_dashboard():
     if request.method == "POST":
         user_id = request.form.get("user_id")
         new_role = request.form.get("role")
+        new_color = request.form.get("tech_color") or "#007bff"
         
         # Fixed SQLAlchemy 2.0 syntax & converted ID to integer
         if user_id and user_id.isdigit():
             user = db.session.get(User, int(user_id))
             if user:
                 user.role = new_role
+                user.tech_color = new_color
                 db.session.commit()
                 flash(f"Role for {user.username} updated to {new_role}.", "success")
         
