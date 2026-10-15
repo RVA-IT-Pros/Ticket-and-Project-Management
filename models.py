@@ -35,6 +35,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default="technician")  # 'admin', 'technician', 'client'
     is_company_admin = db.Column(db.Boolean, default=False)
+    tech_color = db.Column(db.String(20), default="#007bff")  # Default blue color for technicians
 
     # Links login accounts to physical Client/Employee entities
     client_id = db.Column(db.Integer, db.ForeignKey("client.id"), nullable=True)

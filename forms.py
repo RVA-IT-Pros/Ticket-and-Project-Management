@@ -289,6 +289,7 @@ class ChangeRoleForm(FlaskForm):
         choices=[("user", "User"),("technician", "Technician"),("admin", "Admin")],
         validators=[InputRequired()],
     )
+    tech_color = StringField("Tech Color", default="#007bff")
 
 
 class EditNoteForm(FlaskForm):

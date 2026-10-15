@@ -1701,12 +1701,14 @@ def admin_dashboard():
     if request.method == "POST":
         user_id = request.form.get("user_id")
         new_role = request.form.get("role")
+        new_color = request.form.get("tech_color") or "#007bff"
         
         # Fixed SQLAlchemy 2.0 syntax & converted ID to integer
         if user_id and user_id.isdigit():
             user = db.session.get(User, int(user_id))
             if user:
                 user.role = new_role
+                user.tech_color = new_color
                 db.session.commit()
                 flash(f"Role for {user.username} updated to {new_role}.", "success")
         
