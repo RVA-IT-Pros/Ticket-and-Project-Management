@@ -127,6 +127,8 @@
                         </div>
                         <select name="assigned_tech_id" class="custom-select custom-select-sm" required>
                             <option value="0">Unassigned</option>
+                        <select name="assigned_tech_id" id="batchTechSelect" form="batchAssignForm" class="custom-select custom-select-sm">
+                            <option value="0" selected>Unassigned</option>
                             {% if technicians %}
                                 {% for tech in technicians %}
                                     <option value="{{ tech.id }}">{{ tech.username }}</option>
