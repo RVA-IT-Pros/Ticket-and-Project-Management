@@ -2,6 +2,16 @@
 
 {% block title %}Ticket Board | {{ BRAND_NAME or "Helpdesk" }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Clean formatting for typable datalist inputs */
+    #companyFilterInput::-webkit-calendar-picker-indicator {
+        display: none !important;
+        -webkit-appearance: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <form id="batchAssignForm" method="POST" action="{{ url_for('batch_assign_tech') }}">
     <div class="row mb-3 align-items-center">
@@ -34,10 +44,9 @@
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                </div>
 
                     <!-- Tech Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 180px;">
+                    <div class="input-group input-group-sm" style="max-width: 192px;">
                         <div class="input-group-prepend">
                             <label class="input-group-text bg-light" for="techFilterSelect"><i class="fas fa-user-tag mr-1"></i> Tech</label>
                         </div>
@@ -55,7 +64,7 @@
                     </div>
 
                     <!-- Project Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 180px;">
+                    <div class="input-group input-group-sm" style="max-width: 170px;">
                         <div class="input-group-prepend">
                             <label class="input-group-text bg-light" for="projectFilterSelect"><i class="fas fa-project-diagram mr-1"></i> Proj</label>
                         </div>
@@ -67,7 +76,7 @@
                     </div>
 
                     <!-- Status Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 170px;">
+                    <div class="input-group input-group-sm" style="max-width: 180px;">
                         <div class="input-group-prepend">
                             <label class="input-group-text bg-light" for="statusFilterSelect"><i class="fas fa-filter mr-1"></i> Status</label>
                         </div>
@@ -83,7 +92,7 @@
                     </div>
 
                     <!-- Due Date Filter -->
-                    <div class="input-group input-group-sm" style="max-width: 180px;">
+                    <div class="input-group input-group-sm" style="max-width: 160px;">
                         <div class="input-group-prepend">
                             <label class="input-group-text bg-light" for="dateFilterSelect"><i class="fas fa-calendar-alt mr-1"></i> Due</label>
                         </div>
@@ -96,13 +105,6 @@
                             <option value="custom">Custom Range</option>
                             <option value="none">No Due Date</option>
                         </select>
-                    </div>
-
-                    <!-- Custom Date Inputs -->
-                    <div id="customDateContainer" class="d-none align-items-center" style="gap: 5px;">
-                        <input type="date" id="customStartDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
-                        <span class="small text-muted">to</span>
-                        <input type="date" id="customEndDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
                     </div>
                 </div>
 
@@ -132,137 +134,178 @@
                             {% endif %}
                         </select>
                         <div class="input-group-append">
-                            <button type="submit" class="btn btn-warning btn-sm font-weight-bold">
+                            <button type="submit" form="batchAssignForm" class="btn btn-warning btn-sm font-weight-bold">
                                 Apply
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Row 2: Company Filter & Custom Date Range -->
+            <div class="d-flex align-items-center" style="gap: 10px;">
+                <!-- Company Filter -->
+                <div class="input-group input-group-sm" style="max-width: 280px;">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text bg-light" for="companyFilterInput">
+                            <i class="fas fa-building mr-1"></i> Company
+                        </label>
+                    </div>
+                    <input type="text" 
+                        id="companyFilterInput" 
+                        class="form-control form-control-sm" 
+                        list="companyDatalist" 
+                        placeholder="All Companies" 
+                        autocomplete="off"
+                        oninput="applyFilters()" 
+                        onchange="applyFilters()">
+                    <datalist id="companyDatalist">
+                        <option value="All Companies"></option>
+                        {% set company_list = [] %}
+                        {% for ticket in tickets %}
+                            {% set comp_name = ticket.company.name if ticket.company else (ticket.client.company.name if ticket.client and ticket.client.company else None) %}
+                            {% if comp_name and comp_name not in company_list %}
+                                {% set _ = company_list.append(comp_name) %}
+                                <option value="{{ comp_name }}"></option>
+                            {% endif %}
+                        {% endfor %}
+                    </datalist>
+                </div>
+
+                <!-- Custom Date Container -->
+                <div id="customDateContainer" class="d-none align-items-center" style="gap: 5px;">
+                    <input type="date" id="customStartDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+                    <span class="small text-muted">to</span>
+                    <input type="date" id="customEndDate" class="form-control form-control-sm" onchange="applyFilters()" style="width: 130px;">
+                </div>
+            </div>
         </div>
-            
-<div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th style="width: 40px;" class="text-center">
-                        <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)">
-                    </th>
-                    <th style="width: 50px;" class="text-center">Priority</th>
-                    <th style="width: 140px;">Tech</th>
-                    <th>Subject & Details</th>
-                    <th style="width: 130px;" class="text-center">Status</th>
-                    <th style="width: 130px;" class="text-center">Due Date</th>
-                    <th style="width: 90px;" class="text-center">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ticket in tickets %}
-                <tr class="ticket-item" 
-                    data-tech="{{ ticket.assigned_tech.username if ticket.assigned_tech else 'unassigned' }}"
-                    data-status="{{ ticket.status | lower }}"
-                    data-duedate="{{ ticket.due_date | ymd }}"
-                    data-notes="{% for note in ticket.notes %}{{ note.content | lower }} {% endfor %}"
-                    data-hasproject="{% if ticket.project_id %}true{% else %}false{% endif %}">
-                    
-                    <!-- 1. Checkbox -->
-                    <td class="text-center align-middle">
-                        <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="ticket-select-checkbox" onchange="updateTicketCounts()">
-                    </td>
 
-                    <!-- 2. Priority Icon -->
-                    <td class="text-center align-middle">
-                        <span class="badge {% if ticket.priority == 'Critical' %}badge-danger{% elif ticket.priority == 'High' %}badge-warning{% elif ticket.priority == 'Medium' %}badge-success{% else %}badge-secondary{% endif %} p-2" onclick="openEditWindow('{{ url_for('edit_ticket', id=ticket.id) }}')" style="cursor: pointer; border-radius: 50%;">
-                            <i class="fas {% if ticket.status == 'Closed' or ticket.status == 'Completed' %}fa-check{% else %}fa-info-circle{% endif %}"></i>
-                        </span>
-                    </td>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 40px;" class="text-center">
+                                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)">
+                            </th>
+                            <th style="width: 50px;" class="text-center">Priority</th>
+                            <th style="width: 140px;">Tech</th>
+                            <th>Subject & Details</th>
+                            <th style="width: 130px;" class="text-center">Status</th>
+                            <th style="width: 130px;" class="text-center">Due Date</th>
+                            <th style="width: 90px;" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                        <tr class="ticket-item" 
+                            data-tech="{{ ticket.assigned_tech.username if ticket.assigned_tech else 'unassigned' }}"
+                            data-status="{{ ticket.status | lower }}"
+                            data-company="{% if ticket.company %}{{ ticket.company.name | lower }}{% elif ticket.client and ticket.client.company %}{{ ticket.client.company.name | lower }}{% else %}n/a{% endif %}"
+                            data-duedate="{{ ticket.due_date | ymd }}"
+                            data-notes="{% for note in ticket.notes %}{{ note.content | lower }} {% endfor %}"
+                            data-hasproject="{% if ticket.project_id %}true{% else %}false{% endif %}">
+                            
+                            <!-- 1. Checkbox linked directly to batchAssignForm -->
+                            <td class="text-center align-middle">
+                                <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" form="batchAssignForm" class="ticket-select-checkbox" onchange="updateTicketCounts()">
+                            </td>
 
-                    <!-- 3. Tech Column -->
-                    <td class="align-middle ticket-user">
-                        {% if ticket.assigned_tech %}
-                            <span class="badge text-white px-2 py-1" style="background-color: {{ ticket.assigned_tech.tech_color or '#007bff' }};">
-                                {{ ticket.assigned_tech.username }}
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary px-2 py-1">Unassigned</span>
-                        {% endif %}
-                    </td>
+                            <!-- 2. Priority Icon -->
+                            <td class="text-center align-middle">
+                                <span class="badge {% if ticket.priority == 'Critical' %}badge-danger{% elif ticket.priority == 'High' %}badge-warning{% elif ticket.priority == 'Medium' %}badge-success{% else %}badge-secondary{% endif %} p-2" onclick="openEditWindow('{{ url_for('edit_ticket', id=ticket.id) }}')" style="cursor: pointer; border-radius: 50%;">
+                                    <i class="fas {% if ticket.status == 'Closed' or ticket.status == 'Completed' %}fa-check{% else %}fa-info-circle{% endif %}"></i>
+                                </span>
+                            </td>
 
-                    <!-- 4. Subject & Details Column -->
-                    <td class="align-middle ticket-details">
-                        <div class="ticket-subject mb-1">
-                            <strong>#{{ ticket.id }} - {{ ticket.subject }}</strong>
-                        </div>
-                        <div class="ticket-info text-muted small">
-                            <span><strong>Priority:</strong> {{ ticket.priority }}</span> | 
-                            <span><strong>Age:</strong> {{ ticket.age }}</span> | 
-                            <span><strong>Context:</strong> 
-                                {% if ticket.project %}
-                                    Proj: {{ ticket.project.name }}
+                            <!-- 3. Tech Column -->
+                            <td class="align-middle ticket-user">
+                                {% if ticket.assigned_tech %}
+                                    <span class="badge text-white px-2 py-1" style="background-color: {{ ticket.assigned_tech.tech_color or '#007bff' }};">
+                                        {{ ticket.assigned_tech.username }}
+                                    </span>
                                 {% else %}
-                                    General
+                                    <span class="badge bg-secondary px-2 py-1">Unassigned</span>
                                 {% endif %}
-                            </span> | 
-                            <span><strong>Client:</strong>
-                                {% if ticket.client %}
-                                    {{ ticket.client.first_name }} {{ ticket.client.last_name }}
+                            </td>
+
+                            <!-- 4. Subject & Details Column -->
+                            <td class="align-middle ticket-details">
+                                <div class="ticket-subject mb-1">
+                                    <strong>#{{ ticket.id }} - {{ ticket.subject }}</strong>
+                                </div>
+                                <div class="ticket-info text-muted small">
+                                    <span><strong>Priority:</strong> {{ ticket.priority }}</span> | 
+                                    <span><strong>Age:</strong> {{ ticket.age }}</span> | 
+                                    <span><strong>Context:</strong> 
+                                        {% if ticket.project %}
+                                            Proj: {{ ticket.project.name }} #{{ ticket.project.id}}
+                                        {% else %}
+                                            General
+                                        {% endif %}
+                                    </span> | 
+                                    <span><strong>Client:</strong>
+                                        {% if ticket.client %}
+                                            {{ ticket.client.first_name }} {{ ticket.client.last_name }}
+                                        {% else %}
+                                            {{ ticket.requestor_email or 'N/A'}}
+                                        {% endif %}
+                                    </span> |
+                                    <span><strong>Company:</strong> 
+                                        {% if ticket.company %}
+                                            <span class="badge badge-light border text-dark font-weight-bold">{{ ticket.company.name }}</span>
+                                        {% elif ticket.client and ticket.client.company %}
+                                            <span class="badge badge-light border text-dark">{{ ticket.client.company.name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- 5. Status Column -->
+                            <td class="align-middle text-center">
+                                {% if ticket.status == 'Open' %}
+                                    <span class="badge bg-success px-2 py-1">Open</span>
+                                {% elif ticket.status == 'In Progress' %}
+                                    <span class="badge bg-primary px-2 py-1">In Progress</span>
+                                {% elif ticket.status == 'Touched' %}
+                                    <span class="badge bg-info text-dark px-2 py-1">Touched</span>
+                                {% elif ticket.status == 'On Hold' %}
+                                    <span class="badge bg-warning text-dark px-2 py-1">On Hold</span>
+                                {% elif ticket.status == 'Closed' or ticket.status == 'Completed' %}
+                                    <span class="badge bg-dark px-2 py-1">Closed</span>
                                 {% else %}
-                                    {{ ticket.requestor_email or 'N/A'}}
+                                    <span class="badge bg-secondary px-2 py-1">{{ ticket.status }}</span>
                                 {% endif %}
-                            </span>
-                            <span><strong>Company:</strong> 
-                                {% if ticket.company %}
-                                    <span class="badge badge-light border text-dark font-weight-bold">{{ ticket.company.name }}</span>
-                                {% elif ticket.client and ticket.client.company %}
-                                    <span class="badge badge-light border text-dark">{{ ticket.client.company.name }}</span>
+                            </td>
+
+                            <!-- 6. Due Date Column -->
+                            <td class="align-middle text-center small text-muted">
+                                {% if ticket.due_date %}
+                                    <i class="far fa-calendar-alt mr-1"></i>{{ ticket.due_date | ymd }}
                                 {% else %}
-                                    <span class="text-muted">N/A</span>
+                                    <span>N/A</span>
                                 {% endif %}
-                            </span>
-                        </div>
-                    </td>
+                            </td>
 
-                    <!-- 5. Status Column (Single Badge) -->
-                    <td class="align-middle text-center">
-                        {% if ticket.status == 'Open' %}
-                            <span class="badge bg-success px-2 py-1">Open</span>
-                        {% elif ticket.status == 'In Progress' %}
-                            <span class="badge bg-primary px-2 py-1">In Progress</span>
-                        {% elif ticket.status == 'Touched' %}
-                            <span class="badge bg-info text-dark px-2 py-1">Touched</span>
-                        {% elif ticket.status == 'On Hold' %}
-                            <span class="badge bg-warning text-dark px-2 py-1">On Hold</span>
-                        {% elif ticket.status == 'Closed' or ticket.status == 'Completed' %}
-                            <span class="badge bg-dark px-2 py-1">Closed</span>
-                        {% else %}
-                            <span class="badge bg-secondary px-2 py-1">{{ ticket.status }}</span>
-                        {% endif %}
-                    </td>
-
-                    <!-- 6. Due Date Column -->
-                    <td class="align-middle text-center small text-muted">
-                        {% if ticket.due_date %}
-                            <i class="far fa-calendar-alt mr-1"></i>{{ ticket.due_date | ymd }}
-                        {% else %}
-                            <span>N/A</span>
-                        {% endif %}
-                    </td>
-
-                    <!-- 7. Action Button -->
-                    <td class="align-middle text-center btn-view">
-                        <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-sm">
-                            <i class="fas fa-eye mr-1"></i> View
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            <!-- 7. Action Button -->
+                            <td class="align-middle text-center btn-view">
+                                <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
+</form>
 
-<!-- Consolidate Tickets Modal (Placed outside batchAssignForm) -->
+<!-- Consolidate Tickets Modal -->
 <div class="modal fade" id="mergeTicketsModal" tabindex="-1" role="dialog" aria-labelledby="mergeTicketsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -345,11 +388,19 @@
         const selectedStatus = document.getElementById("statusFilterSelect").value;
         const selectedDate = document.getElementById("dateFilterSelect").value;
         const selectedProject = document.getElementById("projectFilterSelect").value;
+        
+        // Typable Company Input Value
+        const companyInputValue = (document.getElementById("companyFilterInput").value || "").trim().toLowerCase();
 
         const customStart = document.getElementById("customStartDate").value;
         const customEnd = document.getElementById("customEndDate").value;
 
+        const searchInput = (document.getElementById("ticketSearchInput").value || "").trim();
+        const lowerSearchInput = searchInput.toLowerCase();
+
+        // Local Storage Persistence
         localStorage.setItem("dashboard_tech_filter", selectedTech);
+        localStorage.setItem("dashboard_company_filter", companyInputValue);
         localStorage.setItem("dashboard_status_filter", selectedStatus);
         localStorage.setItem("dashboard_date_filter", selectedDate);
         localStorage.setItem("dashboard_project_filter", selectedProject);
@@ -358,10 +409,8 @@
 
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-
         const nextWeek = new Date(today);
         nextWeek.setDate(nextWeek.getDate() + 7);
 
@@ -370,14 +419,24 @@
 
         document.querySelectorAll(".ticket-item").forEach(item => {
             const itemTech = item.getAttribute("data-tech");
+            const itemCompany = item.getAttribute("data-company") || "";
             const itemStatus = item.getAttribute("data-status");
             const itemDueDateStr = item.getAttribute("data-duedate");
             const itemHasProject = item.getAttribute("data-hasproject") === "true";
             const itemDueDate = parseLocalDate(itemDueDateStr);
 
+            // 1. Tech Match
             const techMatch = (selectedTech === "all") || (itemTech === selectedTech);
 
-            // Project Filter Match Logic
+            // 2. Company Match (Partial text match against input or 'all companies' / blank)
+            let companyMatch = false;
+            if (!companyInputValue || companyInputValue === "all companies" || companyInputValue === "all") {
+                companyMatch = true;
+            } else {
+                companyMatch = itemCompany.includes(companyInputValue);
+            }
+
+            // 3. Project Match
             let projectMatch = false;
             if (selectedProject === "all") {
                 projectMatch = true;
@@ -387,6 +446,7 @@
                 projectMatch = !itemHasProject;
             }
 
+            // 4. Status Match
             let statusMatch = false;
             if (selectedStatus === "all") {
                 statusMatch = true;
@@ -396,6 +456,7 @@
                 statusMatch = (itemStatus === selectedStatus);
             }
 
+            // 5. Date Match
             let dateMatch = false;
             if (selectedDate === "all") {
                 dateMatch = true;
@@ -425,7 +486,37 @@
                 dateMatch = (!itemDueDate);
             }
 
-            if (techMatch && statusMatch && dateMatch && projectMatch) {
+            // 6. Search Input Match
+            let searchMatch = true;
+            if (searchInput !== "") {
+                searchMatch = false;
+                if (searchInput.startsWith("#") && !isNaN(searchInput.slice(1))) {
+                    const targetProjId = searchInput.slice(1);
+                    const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+                    const projPattern = new RegExp(`proj:.*#${targetProjId}\\b|project:.*#${targetProjId}\\b|#${targetProjId}\\b`);
+                    if (itemHasProject && projPattern.test(detailsText)) {
+                        searchMatch = true;
+                    }
+                } else if (!isNaN(searchInput)) {
+                    const ticketIdPattern = new RegExp(`^#${searchInput}\\b`);
+                    const subjectTrimmed = item.querySelector(".ticket-subject")?.textContent.trim() || "";
+                    if (ticketIdPattern.test(subjectTrimmed)) {
+                        searchMatch = true;
+                    }
+                } else {
+                    const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
+                    const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
+                    const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
+                    const notesText = item.getAttribute("data-notes")?.toLowerCase() || "";
+
+                    if (ticketSubjectText.includes(lowerSearchInput) || userText.includes(lowerSearchInput) || detailsText.includes(lowerSearchInput) || notesText.includes(lowerSearchInput)) {
+                        searchMatch = true;
+                    }
+                }
+            }
+
+            // Final Row Visibility Toggle
+            if (techMatch && companyMatch && statusMatch && dateMatch && searchMatch && projectMatch) {
                 item.style.display = "";
             } else {
                 item.style.display = "none";
@@ -435,195 +526,10 @@
         updateTicketCounts();
     }
 
-function searchTicket() {
-    const input = document.getElementById("ticketSearchInput").value.trim();
-    if (!input) return;
-    
-    // Redirect directly to the full search endpoint
-    window.location.href = "{{ url_for('search_tickets') }}?q=" + encodeURIComponent(input);
-}
-
-function applyFilters() {
-    const selectedTech = document.getElementById("techFilterSelect").value;
-    const selectedStatus = document.getElementById("statusFilterSelect").value;
-    const selectedDate = document.getElementById("dateFilterSelect").value;
-
-    const customStart = document.getElementById("customStartDate").value;
-    const customEnd = document.getElementById("customEndDate").value;
-    
-    // Get search input term
-    const searchInput = document.getElementById("ticketSearchInput").value.trim();
-    const lowerSearchInput = searchInput.toLowerCase();
-
-    localStorage.setItem("dashboard_tech_filter", selectedTech);
-    localStorage.setItem("dashboard_status_filter", selectedStatus);
-    localStorage.setItem("dashboard_date_filter", selectedDate);
-    localStorage.setItem("dashboard_custom_start", customStart);
-    localStorage.setItem("dashboard_custom_end", customEnd);
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-
-    const startDateObj = parseLocalDate(customStart);
-    const endDateObj = parseLocalDate(customEnd);
-
-    document.querySelectorAll(".ticket-item").forEach(item => {
-        const itemTech = item.getAttribute("data-tech");
-        const itemStatus = item.getAttribute("data-status");
-        const itemDueDateStr = item.getAttribute("data-duedate");
-        const itemDueDate = parseLocalDate(itemDueDateStr);
-
-        // --- Tech Filter ---
-        const techMatch = (selectedTech === "all") || (itemTech === selectedTech);
-
-        // --- Status Filter ---
-        let statusMatch = false;
-        if (selectedStatus === "all") {
-            statusMatch = true;
-        } else if (selectedStatus === "hide_closed") {
-            statusMatch = (itemStatus !== "closed" && itemStatus !== "completed");
-        } else {
-            statusMatch = (itemStatus === selectedStatus);
-        }
-
-        // --- Date Filter ---
-        let dateMatch = false;
-        if (selectedDate === "all") {
-            dateMatch = true;
-        } else if (selectedDate === "today") {
-            dateMatch = (itemDueDate && itemDueDate.getTime() === today.getTime());
-        } else if (selectedDate === "tomorrow") {
-            dateMatch = (itemDueDate && itemDueDate.getTime() === tomorrow.getTime());
-        } else if (selectedDate === "next_7_days") {
-            dateMatch = (itemDueDate && itemDueDate.getTime() >= today.getTime() && itemDueDate.getTime() <= nextWeek.getTime());
-        } else if (selectedDate === "overdue") {
-            dateMatch = (itemDueDate && itemDueDate.getTime() < today.getTime());
-        } else if (selectedDate === "custom") {
-            if (itemDueDate) {
-                if (startDateObj && endDateObj) {
-                    dateMatch = (itemDueDate.getTime() >= startDateObj.getTime() && itemDueDate.getTime() <= endDateObj.getTime());
-                } else if (startDateObj) {
-                    dateMatch = (itemDueDate.getTime() >= startDateObj.getTime());
-                } else if (endDateObj) {
-                    dateMatch = (itemDueDate.getTime() <= endDateObj.getTime());
-                } else {
-                    dateMatch = true;
-                }
-            } else {
-                dateMatch = false;
-            }
-        } else if (selectedDate === "none") {
-            dateMatch = (!itemDueDate);
-        }
-
-        // --- Search Match Logic ---
-        let searchMatch = true;
-        if (searchInput !== "") {
-            searchMatch = false;
-
-            // 1. Hashtag Project ID Search (e.g. #21) -> Filter by Project ID
-            if (searchInput.startsWith("#") && !isNaN(searchInput.slice(1))) {
-                const targetProjId = searchInput.slice(1);
-                const contextText = item.querySelector(".ticket-type")?.textContent.toLowerCase() || "";
-                const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-
-                // Check if project # matches explicitly in Context or Details meta
-                const projPattern = new RegExp(`proj:.*#${targetProjId}\\b|project:.*#${targetProjId}\\b|#${targetProjId}\\b`);
-                
-                // Exclude subject line ticket ID match by checking if the row actually has a project
-                const hasProject = item.getAttribute("data-hasproject") === "true";
-                if (hasProject && (projPattern.test(contextText) || projPattern.test(detailsText))) {
-                    searchMatch = true;
-                }
-            } 
-            // 2. Exact Numeric Ticket ID Search (e.g. 1, 100, 263) -> Exact Ticket ID match
-            else if (!isNaN(searchInput)) {
-                const ticketIdPattern = new RegExp(`^#${searchInput}\\b`);
-                const subjectTrimmed = item.querySelector(".ticket-subject")?.textContent.trim() || "";
-                if (ticketIdPattern.test(subjectTrimmed)) {
-                    searchMatch = true;
-                }
-            } 
-            // 3. General Text Search -> Subject, Client, or Details
-            else {
-                const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-                const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-                const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-                const notesText = item.getAttribute("data-notes")?.toLowerCase() || "";
-
-                if (ticketSubjectText.includes(lowerSearchInput) || userText.includes(lowerSearchInput) || detailsText.includes(lowerSearchInput) || notesText.includes(lowerSearchInput)) {
-                    searchMatch = true;
-                }
-            }
-        }
-
-        // Display ticket only if ALL filter conditions pass
-        if (techMatch && statusMatch && dateMatch && searchMatch) {
-            item.style.display = "";
-        } else {
-            item.style.display = "none";
-        }
-    });
-
-    // Update the counter badges on the dashboard header
-    updateTicketCounts();
-}
     function searchTicket() {
         const input = document.getElementById("ticketSearchInput").value.trim();
-        if (!input) {
-            alert("Please enter a ticket #, #project, or search term.");
-            return;
-        }
-
-        document.querySelectorAll(".highlight").forEach(el => el.classList.remove("highlight"));
-
-        let found = false;
-        const lowerInput = input.toLowerCase();
-
-        document.querySelectorAll(".ticket-item").forEach(item => {
-            const ticketSubjectText = item.querySelector(".ticket-subject")?.textContent.toLowerCase() || "";
-            const userText = item.querySelector(".ticket-user")?.textContent.toLowerCase() || "";
-            const detailsText = item.querySelector(".ticket-details")?.textContent.toLowerCase() || "";
-            
-            let match = false;
-
-            if (input.startsWith("#") && !isNaN(input.slice(1))) {
-                const targetProjId = input.slice(1);
-                const projPattern = new RegExp(`#${targetProjId}\\b`);
-                if (projPattern.test(detailsText)) {
-                    match = true;
-                }
-            } else if (!isNaN(input)) {
-                const ticketIdPattern = new RegExp(`^#${input}\\b`);
-                const subjectTrimmed = item.querySelector(".ticket-subject")?.textContent.trim() || "";
-                if (ticketIdPattern.test(subjectTrimmed)) {
-                    match = true;
-                }
-            } else {
-                if (ticketSubjectText.includes(lowerInput) || userText.includes(lowerInput) || detailsText.includes(lowerInput)) {
-                    match = true;
-                }
-            }
-
-            if (match) {
-                item.classList.add("highlight");
-                item.style.display = "";
-                item.scrollIntoView({ behavior: "smooth", block: "center" });
-                found = true;
-            }
-        });
-
-        if (!found) {
-            alert("No matching ticket found.");
-        } else {
-            updateTicketCounts();
-        }
+        if (!input) return;
+        window.location.href = "{{ url_for('search_tickets') }}?q=" + encodeURIComponent(input);
     }
 
     function updateTicketCounts() {
@@ -650,7 +556,21 @@ function applyFilters() {
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+        // Prevent batch submission when no tickets are checked
+        const batchForm = document.getElementById("batchAssignForm");
+        if (batchForm) {
+            batchForm.addEventListener("submit", function (e) {
+                const checkedBoxes = document.querySelectorAll(".ticket-select-checkbox:checked");
+                if (checkedBoxes.length === 0) {
+                    e.preventDefault();
+                    alert("Please select at least one ticket to assign using the checkboxes.");
+                    return false;
+                }
+            });
+        }
+
         const savedTech = localStorage.getItem("dashboard_tech_filter");
+        const savedCompany = localStorage.getItem("dashboard_company_filter");
         const savedStatus = localStorage.getItem("dashboard_status_filter");
         const savedDate = localStorage.getItem("dashboard_date_filter");
         const savedProject = localStorage.getItem("dashboard_project_filter");
@@ -659,33 +579,26 @@ function applyFilters() {
 
         if (savedStart) document.getElementById("customStartDate").value = savedStart;
         if (savedEnd) document.getElementById("customEndDate").value = savedEnd;
+        if (savedCompany) document.getElementById("companyFilterInput").value = savedCompany;
 
         if (savedTech) {
             const techSelect = document.getElementById("techFilterSelect");
-            if ([...techSelect.options].some(opt => opt.value === savedTech)) {
-                techSelect.value = savedTech;
-            }
+            if ([...techSelect.options].some(opt => opt.value === savedTech)) techSelect.value = savedTech;
         }
 
         if (savedStatus) {
             const statusSelect = document.getElementById("statusFilterSelect");
-            if ([...statusSelect.options].some(opt => opt.value === savedStatus)) {
-                statusSelect.value = savedStatus;
-            }
+            if ([...statusSelect.options].some(opt => opt.value === savedStatus)) statusSelect.value = savedStatus;
         }
 
         if (savedDate) {
             const dateSelect = document.getElementById("dateFilterSelect");
-            if ([...dateSelect.options].some(opt => opt.value === savedDate)) {
-                dateSelect.value = savedDate;
-            }
+            if ([...dateSelect.options].some(opt => opt.value === savedDate)) dateSelect.value = savedDate;
         }
         
         if (savedProject) {
             const projectSelect = document.getElementById("projectFilterSelect");
-            if ([...projectSelect.options].some(opt => opt.value === savedProject)) {
-                projectSelect.value = savedProject;
-            }
+            if ([...projectSelect.options].some(opt => opt.value === savedProject)) projectSelect.value = savedProject;
         }
 
         toggleCustomDateInputs();
@@ -700,9 +613,4 @@ function applyFilters() {
         }
     });
 </script>
-<style>
-    .highlight {
-        background-color: #ffff99 !important;
-    }
-</style>
 {% endblock %}

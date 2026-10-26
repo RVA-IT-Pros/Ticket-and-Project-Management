@@ -42,6 +42,11 @@
                         </div>
 
                         <div class="form-group mb-3">
+                            {{ update_form.company_id.label(class="font-weight-bold") }}
+                            {{ update_form.company_id(class="custom-select form-control", id="companySelect") }}
+                        </div>
+
+                        <div class="form-group mb-3">
                             {{ update_form.client_id.label(class="font-weight-bold") }}
                             <select id="client_id" name="client_id" class="form-control custom-select">
                                 {% for client_id, client_name in update_form.client_id.choices %}
@@ -52,10 +57,6 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6 form-group">
-                            {{ update_form.company_id.label(class="font-weight-bold") }}
-                            {{ update_form.company_id(class="custom-select form-control", id="companySelect") }}
-                        </div>
 
                         <div class="form-group mb-3">
                             {{ update_form.requestor_email.label(class="font-weight-bold") }}
