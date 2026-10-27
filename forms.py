@@ -60,8 +60,9 @@ class LoginForm(FlaskForm):
 class TicketForm(FlaskForm):
     subject = StringField("Subject", validators=[InputRequired()])
     description = TextAreaField("Description", validators=[InputRequired()])
-    client_id = SelectField("Requestor", coerce=int, validators=[DataRequired()])
-    requestor_email = StringField("Requestor Email", validators=[DataRequired()])
+    client_id = SelectField("Requestor", coerce=int, validators=[Optional()])
+    company_id = SelectField("Company", coerce=int, validators=[Optional()])
+    requestor_email = StringField("Requestor Email", validators=[Optional()])
     cc_emails = TextAreaField("CC Emails (comma-separated)", validators=[Optional()])
     # Use consistent priority values for easy comparison in the app
     priority = SelectField(
@@ -102,8 +103,9 @@ class TicketForm(FlaskForm):
 class UpdateTicketForm(FlaskForm):
     subject = StringField("Subject", validators=[DataRequired()])
     description = TextAreaField("Description", validators=[DataRequired()])
-    client_id = SelectField("Requestor", coerce=int, validators=[DataRequired()])
-    requestor_email = StringField("Requestor Email", validators=[DataRequired()])
+    client_id = SelectField("Requestor", coerce=int, validators=[Optional()])
+    company_id = SelectField("Company", coerce=int, validators=[Optional()])
+    requestor_email = StringField("Requestor Email", validators=[Optional()])
     cc_emails = TextAreaField("CC Emails (comma-separated)", validators=[Optional()])
     status = SelectField(
         "Status",
