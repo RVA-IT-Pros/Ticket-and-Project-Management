@@ -537,7 +537,7 @@ def view_ticket(id):
     note_form = AddNoteForm()
     eastern = timezone("US/Eastern")  # Define the Eastern timezone
 
-    all_tickets = Ticket.query.filter(Ticket.id != id).order_by(Ticket.id.desc()).all()
+    all_tickets = Ticket.query.filter(Ticket.id != id, ~Ticket.status.in_(["Closed", "Completed"])).order_by(Ticket.id.desc()).all()
 
     # Safely access the project and company (if they exist)
     project = ticket.project
@@ -729,6 +729,7 @@ def send_note_email(requestor_email, ticket, note):
 def edit_ticket(id):
     ticket = Ticket.query.get_or_404(id)
 
+
     if ticket.due_date and isinstance(ticket.due_date, str):
         try:
             ticket.due_date = parser.parse(ticket.due_date)
@@ -821,7 +822,7 @@ def edit_ticket(id):
                 for error in errors:
                     flash(f"Error in {getattr(update_form, field).label.text}: {error}", "danger")
 
-    return render_template("edit_ticket.html", ticket=ticket, update_form=update_form)
+    return render_template("edit_ticket.html", ticket=ticket, update_form=update_form,)
 
 
 @app.route("/edit_note/<int:note_id>", methods=["GET", "POST"])
