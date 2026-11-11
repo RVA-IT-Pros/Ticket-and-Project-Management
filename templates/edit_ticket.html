@@ -42,6 +42,11 @@
                         </div>
 
                         <div class="form-group mb-3">
+                            {{ update_form.company_id.label(class="font-weight-bold") }}
+                            {{ update_form.company_id(class="custom-select form-control", id="companySelect") }}
+                        </div>
+
+                        <div class="form-group mb-3">
                             {{ update_form.client_id.label(class="font-weight-bold") }}
                             <select id="client_id" name="client_id" class="form-control custom-select">
                                 {% for client_id, client_name in update_form.client_id.choices %}
@@ -51,6 +56,7 @@
                                 {% endfor %}
                             </select>
                         </div>
+
 
                         <div class="form-group mb-3">
                             {{ update_form.requestor_email.label(class="font-weight-bold") }}
@@ -140,6 +146,50 @@
             descriptionTextarea.dataset.preview = 'description-preview';
             new MarkdownEditor('description', 'description-preview');
             descriptionTextarea.dataset.markdownInitialized = 'true';
+        }
+    });
+    document.addEventListener("DOMContentLoaded", function() {
+        const companySelect = document.getElementById("companySelect");
+        const clientSelect = document.getElementById("client_id");
+        const emailInput = document.getElementById("requestor_email");
+
+        // 1. When Company changes, dynamically fetch clients for that company + RVA IT Pros staff
+        if (companySelect && clientSelect) {
+            companySelect.addEventListener("change", function() {
+                const companyId = this.value;
+                fetch(`/get_company_clients?company_id=${companyId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const currentSelected = clientSelect.value;
+                        clientSelect.innerHTML = '<option value="0">-- Select Requestor Individual (Optional) --</option>';
+                        
+                        data.clients.forEach(client => {
+                            const option = document.createElement("option");
+                            option.value = client.id;
+                            option.textContent = client.name; // Clean "First Last" name
+                            if (client.id == currentSelected) {
+                                option.selected = true;
+                            }
+                            clientSelect.appendChild(option);
+                        });
+                    });
+            });
+        }
+
+        // 2. When Requestor changes, auto-populate email
+        if (clientSelect && emailInput) {
+            clientSelect.addEventListener("change", function() {
+                const clientId = this.value;
+                if (clientId && clientId !== "0") {
+                    fetch(`/get_client_email?client_id=${clientId}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.email) {
+                                emailInput.value = data.email;
+                            }
+                        });
+                }
+            });
         }
     });
 </script>

@@ -126,7 +126,7 @@ class Ticket(db.Model):
     description = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(50), default="Open")
     priority = db.Column(db.String(50), default="Medium")
-    billable = db.Column(db.String(10), default="NB")  # 'NB' = Non-Billable, 'R' = Review, 'I' = Invoiced
+    billable = db.Column(db.String(10), default="NB")
     qbo_invoice_id = db.Column(db.String(50), nullable=True)
 
     due_date = db.Column(db.DateTime, nullable=True)
@@ -143,19 +143,22 @@ class Ticket(db.Model):
     requestor_email = db.Column(db.String(150), nullable=True)
     cc_emails = db.Column(db.String(255), nullable=True)
 
-    # Relationships & Foreign Keys
+    # Foreign Keys
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     assigned_tech_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     client_id = db.Column(db.Integer, db.ForeignKey("client.id"), nullable=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("company.id"), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"), nullable=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase.id"), nullable=True)
 
+    # Relationships
     assigned_tech = db.relationship("User", foreign_keys=[assigned_tech_id])
     notes = db.relationship("TicketNote", backref="ticket", lazy=True, cascade="all, delete-orphan")
 
     gmail_message_id = db.Column(db.String(128), nullable=True)
 
     client = db.relationship("Client", back_populates="tickets")
+    company = db.relationship("Company")
     project = db.relationship("Project", back_populates="tickets")
     phase = db.relationship("Phase", back_populates="tickets")
 

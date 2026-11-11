@@ -19,7 +19,7 @@
                 <div class="card-body">
                     {{ form.hidden_tag() }}
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         {{ form.subject.label(class="font-weight-bold") }}
                         {{ form.subject(class="form-control", placeholder="Brief description of the issue") }}
                         {% if form.subject.errors %}
@@ -27,50 +27,53 @@
                         {% endif %}
                     </div>
 
-                    <div class="row">
+                    <div class="row mb-3">
+                        <!-- Company Dropdown -->
                         <div class="col-md-6 form-group">
-                            {{ form.client_id.label(class="font-weight-bold") }}
-                            {{ form.client_id(class="custom-select", id="clientSelect") }}
-                            {% if form.client_id.errors %}
-                                <div class="text-danger small mt-1">{{ form.client_id.errors[0] }}</div>
-                            {% endif %}
+                            {{ form.company_id.label(class="font-weight-bold") }}
+                            {{ form.company_id(class="custom-select form-control", id="companySelect") }}
                         </div>
 
+                        <!-- Individual Requestor Dropdown -->
+                        <div class="col-md-6 form-group">
+                            {{ form.client_id.label(class="font-weight-bold") }}
+                            {{ form.client_id(class="custom-select form-control", id="clientSelect") }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
                         <div class="col-md-6 form-group">
                             {{ form.requestor_email.label(class="font-weight-bold") }}
                             {{ form.requestor_email(class="form-control", id="requestorEmailInput", placeholder="client@company.com") }}
-                            {% if form.requestor_email.errors %}
-                                <div class="text-danger small mt-1">{{ form.requestor_email.errors[0] }}</div>
-                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            {{ form.cc_emails.label(class="font-weight-bold") }}
+                            {{ form.cc_emails(class="form-control", rows=1, placeholder="Additional emails separated by commas") }}
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        {{ form.cc_emails.label(class="font-weight-bold") }}
-                        {{ form.cc_emails(class="form-control", rows=2, placeholder="Additional emails separated by commas") }}
-                    </div>
-
-                    <div class="row">
+                    <div class="row mb-3">
                         <div class="col-md-4 form-group">
                             {{ form.assigned_tech_id.label(class="font-weight-bold") }}
-                            {{ form.assigned_tech_id(class="custom-select") }}
+                            {{ form.assigned_tech_id(class="custom-select form-control") }}
                         </div>
 
                         <div class="col-md-4 form-group">
                             {{ form.priority.label(class="font-weight-bold") }}
-                            {{ form.priority(class="custom-select") }}
+                            {{ form.priority(class="custom-select form-control") }}
                         </div>
 
                         <div class="col-md-4 form-group">
                             {{ form.status.label(class="font-weight-bold") }}
-                            {{ form.status(class="custom-select") }}
+                            {{ form.status(class="custom-select form-control") }}
                         </div>
                     </div>
 
-                    <div class="row">
+                    <div class="row mb-3">
                         <div class="col-md-4 form-group">
                             {{ form.phase_id.label(class="font-weight-bold") }}
-                            {{ form.phase_id(class="custom-select") }}
+                            {{ form.phase_id(class="custom-select form-control") }}
                         </div>
 
                         <div class="col-md-4 form-group">
@@ -84,12 +87,9 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         {{ form.description.label(class="font-weight-bold") }}
                         {{ form.description(class="form-control", rows=6, placeholder="Detailed ticket notes/description...") }}
-                        {% if form.description.errors %}
-                            <div class="text-danger small mt-1">{{ form.description.errors[0] }}</div>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -107,11 +107,30 @@
 
 {% block extra_js %}
 <script>
-    // Automatically populate requestor_email when requestor select changes
     document.addEventListener("DOMContentLoaded", function() {
+        const companySelect = document.getElementById("companySelect");
         const clientSelect = document.getElementById("clientSelect");
         const emailInput = document.getElementById("requestorEmailInput");
 
+        // 1. When Company changes, filter Requestors list
+        if (companySelect) {
+            companySelect.addEventListener("change", function() {
+                const companyId = this.value;
+                fetch(`/get_company_clients?company_id=${companyId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        clientSelect.innerHTML = '<option value="0">-- Select Requestor Individual --</option>';
+                        data.clients.forEach(client => {
+                            const option = document.createElement("option");
+                            option.value = client.id;
+                            option.textContent = `${client.name}`;
+                            clientSelect.appendChild(option);
+                        });
+                    });
+            });
+        }
+
+        // 2. When Requestor Individual changes, auto-populate email
         if (clientSelect) {
             clientSelect.addEventListener("change", function() {
                 const clientId = this.value;
@@ -122,8 +141,7 @@
                             if (data.email) {
                                 emailInput.value = data.email;
                             }
-                        })
-                        .catch(err => console.error("Error fetching email:", err));
+                        });
                 }
             });
         }

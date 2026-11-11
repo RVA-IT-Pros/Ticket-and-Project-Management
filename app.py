@@ -451,6 +451,10 @@ def new_ticket():
 
     form = TicketForm()
 
+    #Populate Company Choices
+    companies = Company.query.order_by(Company.name.asc()).all()
+    form.company_id.choices = [(0, "-- Select company) --")] + [(c.id, c.name) for c in companies]
+
     # Populate the client (employee) choices for the requestor
     clients = Client.query.all()  # Retrieve all clients (employees)
     form.client_id.choices = [
@@ -475,29 +479,38 @@ def new_ticket():
     else:
         form.phase_id.choices = [(0, "No Project Assigned")]
 
-    # Validate and handle the form submission
     if form.validate_on_submit():
         assigned_tech_id = (
             form.assigned_tech_id.data
             if form.assigned_tech_id.data and form.assigned_tech_id.data != 0
-            else None
-        )
+            else None )
+        selected_company_id = form.company_id.data if form.company_id.data != 0 else None
+        selected_client_id = form.client_id.data if form.client_id.data != 0 else None
+
+        if selected_company_id is None and selected_client_id:
+            client_obj = Client.query.get(selected_client_id)
+            if client_obj:
+                selected_company_id = client_obj.company_id
+                
+        
         # Create the ticket
         ticket = Ticket(
             subject=form.subject.data,
             description=form.description.data,
             priority=form.priority.data,
             status=form.status.data,
-            user_id=current_user.id,  # User who created the ticket
-            assigned_tech_id=assigned_tech_id, # ADDED
+            user_id=current_user.id,
+            assigned_tech_id=assigned_tech_id,
             phase_id=form.phase_id.data if form.phase_id.data != 0 else None,
             project_id=project_id,
-            client_id=form.client_id.data,  # Link the requestor (client)
-            requestor_email=form.requestor_email.data,  # Add requestor email
-            cc_emails=form.cc_emails.data,  # Add CC emails
+            company_id=selected_company_id,
+            client_id=selected_client_id,
+            requestor_email=form.requestor_email.data,
+            cc_emails=form.cc_emails.data,
             due_date=form.due_date.data,
             estimated_hours=form.estimated_hours.data if form.estimated_hours.data is not None else 0.5,
         )
+
         db.session.add(ticket)
         db.session.commit()
         if ticket.assigned_tech_id:
@@ -524,7 +537,7 @@ def view_ticket(id):
     note_form = AddNoteForm()
     eastern = timezone("US/Eastern")  # Define the Eastern timezone
 
-    all_tickets = Ticket.query.filter(Ticket.id != id).order_by(Ticket.id.desc()).all()
+    all_tickets = Ticket.query.filter(Ticket.id != id, ~Ticket.status.in_(["Closed", "Completed"])).order_by(Ticket.id.desc()).all()
 
     # Safely access the project and company (if they exist)
     project = ticket.project
@@ -716,22 +729,25 @@ def send_note_email(requestor_email, ticket, note):
 def edit_ticket(id):
     ticket = Ticket.query.get_or_404(id)
 
+
     if ticket.due_date and isinstance(ticket.due_date, str):
         try:
             ticket.due_date = parser.parse(ticket.due_date)
         except ValueError:
             ticket.due_date = None
 
-    update_form = UpdateTicketForm(obj=ticket)
+    update_form = UpdateTicketForm()
 
-    # Populate client choices
-    clients = Client.query.all()
-    update_form.client_id.choices = [
+    # 1. Populate Dropdown Choices (Must happen BEFORE form validation)
+    companies = Company.query.order_by(Company.name.asc()).all()
+    update_form.company_id.choices = [(0, "-- Select Company --")] + [(c.id, c.name) for c in companies]
+
+    clients = Client.query.join(Company).order_by(Company.name.asc(), Client.first_name.asc()).all()
+    update_form.client_id.choices = [(0, "-- Select Requestor Individual (Optional) --")] + [
         (client.id, f"{client.first_name} {client.last_name} ({client.company.name})")
         for client in clients
     ]
 
-    # ADDED: Populate assigned technician choices
     users = User.query.filter(User.role.in_(['admin', 'technician'])).all()
     if not users:
         users = User.query.all()
@@ -742,52 +758,71 @@ def edit_ticket(id):
     if ticket.project_id:
         project = Project.query.get(ticket.project_id)
         if project and project.phases:
-            update_form.phase_id.choices = [(p.id, p.name) for p in project.phases]
+            update_form.phase_id.choices = [(0, "No Phase Assigned")] + [(p.id, p.name) for p in project.phases]
         else:
             update_form.phase_id.choices = [(0, "No Phases Available")]
     else:
         update_form.phase_id.choices = [(0, "No Project Assigned")]
 
-    # ADDED: Pre-select assigned tech on GET request
+    # 2. Pre-populate Form Data on GET Request ONLY
     if request.method == "GET":
+        update_form.subject.data = ticket.subject
+        update_form.description.data = ticket.description
+        update_form.status.data = ticket.status
+        update_form.priority.data = ticket.priority
+        update_form.company_id.data = ticket.company_id or 0
+        update_form.client_id.data = ticket.client_id or 0
+        update_form.requestor_email.data = ticket.requestor_email
+        update_form.cc_emails.data = ticket.cc_emails
+        update_form.phase_id.data = ticket.phase_id or 0
+        update_form.due_date.data = ticket.due_date
+        update_form.estimated_hours.data = ticket.estimated_hours
         update_form.assigned_tech_id.data = ticket.assigned_tech_id or 0
 
-    if request.method == "POST" and update_form.validate_on_submit():
-        old_tech_id = ticket.assigned_tech_id # ADDED: Track previous tech
+    # 3. Handle Form Submission on POST Request
+    if request.method == "POST":
+        if update_form.validate_on_submit():
+            old_tech_id = ticket.assigned_tech_id
 
-        ticket.subject = update_form.subject.data
-        ticket.description = update_form.description.data
-        ticket.status = update_form.status.data
-        ticket.priority = update_form.priority.data
-        ticket.client_id = update_form.client_id.data
-        ticket.requestor_email = update_form.requestor_email.data
-        ticket.cc_emails = update_form.cc_emails.data
-        ticket.phase_id = (
-            update_form.phase_id.data if update_form.phase_id.data != 0 else None
-        )
-        ticket.estimated_hours = update_form.estimated_hours.data
+            selected_company_id = update_form.company_id.data if update_form.company_id.data and update_form.company_id.data != 0 else None
+            selected_client_id = update_form.client_id.data if update_form.client_id.data and update_form.client_id.data != 0 else None
 
-        # ADDED: Check and assign new tech ID
-        new_tech_id = (
-            update_form.assigned_tech_id.data
-            if update_form.assigned_tech_id.data != 0
-            else None
-        )
-        ticket.assigned_tech_id = new_tech_id
+            # Fallback to client's company ONLY if company was left unselected (0)
+            if selected_company_id is None and selected_client_id:
+                client_obj = Client.query.get(selected_client_id)
+                if client_obj:
+                    selected_company_id = client_obj.company_id
 
-        if update_form.due_date.data:
+            # Save updated values to ticket object
+            ticket.subject = update_form.subject.data
+            ticket.description = update_form.description.data
+            ticket.status = update_form.status.data
+            ticket.priority = update_form.priority.data
+            ticket.company_id = selected_company_id
+            ticket.client_id = selected_client_id
+            ticket.requestor_email = update_form.requestor_email.data
+            ticket.cc_emails = update_form.cc_emails.data
+            ticket.phase_id = update_form.phase_id.data if update_form.phase_id.data and update_form.phase_id.data != 0 else None
+            ticket.estimated_hours = update_form.estimated_hours.data
             ticket.due_date = update_form.due_date.data
 
-        db.session.commit()
+            new_tech_id = update_form.assigned_tech_id.data if update_form.assigned_tech_id.data and update_form.assigned_tech_id.data != 0 else None
+            ticket.assigned_tech_id = new_tech_id
 
-        # ADDED: Send notification email if assigned technician changed
-        if new_tech_id and new_tech_id != old_tech_id:
-            send_assignment_email(ticket)
+            db.session.commit()
 
-        flash("Ticket updated successfully!", "success")
-        return redirect(url_for("view_ticket", id=ticket.id))
+            if new_tech_id and new_tech_id != old_tech_id:
+                send_assignment_email(ticket)
 
-    return render_template("edit_ticket.html", ticket=ticket, update_form=update_form)
+            flash("Ticket updated successfully!", "success")
+            return redirect(url_for("view_ticket", id=ticket.id))
+        else:
+            # Flashes validation errors if form submission fails validation
+            for field, errors in update_form.errors.items():
+                for error in errors:
+                    flash(f"Error in {getattr(update_form, field).label.text}: {error}", "danger")
+
+    return render_template("edit_ticket.html", ticket=ticket, update_form=update_form,)
 
 
 @app.route("/edit_note/<int:note_id>", methods=["GET", "POST"])
@@ -1686,6 +1721,45 @@ def get_client_email():
 
     # Return the email in JSON format
     return jsonify(email=client.email)
+
+@app.route("/get_company_clients", methods=["GET"])
+@login_required
+def get_company_clients():
+    company_id = request.args.get("company_id", type=int)
+
+    # 1. Identify the Internal Company (RVA IT Pros)
+    internal_company = Company.query.filter(
+        or_(
+            Company.name.ilike("%RVA IT Pros%"),
+            Company.customer_type == "Internal"
+        )
+    ).first()
+
+    internal_company_id = internal_company.id if internal_company else None
+
+    # 2. Query clients for the selected company + internal staff
+    if not company_id or company_id == 0:
+        clients = Client.query.all()
+    else:
+        # Include selected company OR internal company staff
+        company_ids = [company_id]
+        if internal_company_id and internal_company_id != company_id:
+            company_ids.append(internal_company_id)
+
+        clients = Client.query.filter(Client.company_id.in_(company_ids)).all()
+
+    client_data = [
+        {
+            "id": c.id,
+            "name": f"{c.first_name} {c.last_name}",
+            "email": c.email,
+            "company_id": c.company_id,
+            "is_internal": (c.company_id == internal_company_id)
+        }
+        for c in clients
+    ]
+    
+    return jsonify(clients=client_data)
 
 
 @app.route("/admin_dashboard", methods=["GET", "POST"])
