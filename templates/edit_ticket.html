@@ -111,7 +111,7 @@
             </div>
 
             <div class="card-footer bg-white text-right">
-                <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-secondary mr-2">Back to Ticket</a>
+                <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}" class="btn btn-secondary mr-2">Back to Ticket</a>
                 <button type="submit" class="btn btn-primary font-weight-bold px-4">Update Ticket</button>
             </div>
         </form>
