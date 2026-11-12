@@ -206,7 +206,7 @@ def portal_new_ticket():
 @login_required
 def portal_view_project(project_id):
     if current_user.role != "client":
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("tickets.dashboard"))
 
     project = Project.query.get_or_404(project_id)
 
