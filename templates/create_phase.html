@@ -27,7 +27,7 @@
                 </div>
 
                 <div class="card-footer bg-white text-right">
-                    <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="btn btn-secondary mr-2">Cancel</a>
+                    <a href="{{ url_for('projects.project_dashboard', project_id=project.id) }}" class="btn btn-secondary mr-2">Cancel</a>
                     <button type="submit" class="btn btn-primary font-weight-bold px-4">Create Phase</button>
                 </div>
             </form>

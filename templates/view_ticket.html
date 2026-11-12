@@ -28,7 +28,7 @@
         </h3>
     </div>
     <div class="no-print col-md-4 text-md-right mt-2 mt-md-0">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+        <a href="{{ url_for('tickets.dashboard') }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-times mr-1"></i> Back to Dashboard
         </a>
     </div>
@@ -112,10 +112,10 @@
                                         <div class="markdown-content">{{ note.content | markdown | safe }}</div>
                                     </div>
                                     <div class="timeline-footer no-print d-flex align-items-center gap-2">
-                                        <a href="{{ url_for('edit_note', note_id=note.id) }}" class="btn btn-warning btn-xs mr-2">
+                                        <a href="{{ url_for('tickets.edit_note', note_id=note.id) }}" class="btn btn-warning btn-xs mr-2">
                                             <i class="fas fa-edit mr-1"></i> Edit Note
                                         </a>
-                                        <form method="POST" action="{{ url_for('toggle_resolution', note_id=note.id) }}" class="d-inline">
+                                        <form method="POST" action="{{ url_for('tickets.toggle_resolution', note_id=note.id) }}" class="d-inline">
                                             <button type="submit" class="btn btn-outline-info btn-xs">
                                                 {% if note.is_resolution %}Unmark Resolution{% else %}Mark as Resolution{% endif %}
                                             </button>
@@ -179,18 +179,18 @@
                 <h5 class="card-title font-weight-bold m-0"><i class="fas fa-tools mr-2"></i>Actions</h5>
             </div>
             <div class="card-body d-flex flex-column gap-2" style="gap: 10px;">
-                <form method="POST" action="{{ url_for('complete_ticket', id=ticket.id) }}">
+                <form method="POST" action="{{ url_for('tickets.complete_ticket', id=ticket.id) }}">
                     <button type="submit" name="complete" class="btn btn-success btn-block font-weight-bold">
                         <i class="fas fa-check-circle mr-1"></i> Mark Ticket Complete
                     </button>
                 </form>
-                <a href="{{ url_for('edit_ticket', id=ticket.id) }}" class="btn btn-warning btn-block font-weight-bold">
+                <a href="{{ url_for('tickets.edit_ticket', id=ticket.id) }}" class="btn btn-warning btn-block font-weight-bold">
                     <i class="fas fa-pencil-alt mr-1"></i> Edit Ticket
                 </a>
-                <a href="{{ url_for('select_project', ticket_id=ticket.id) }}" class="btn btn-info btn-block">
+                <a href="{{ url_for('projects.select_project', ticket_id=ticket.id) }}" class="btn btn-info btn-block">
                     <i class="fas fa-project-diagram mr-1"></i> Convert to Project
                 </a>
-                <form method="POST" action="{{ url_for('toggle_billable', ticket_id=ticket.id) }}">
+                <form method="POST" action="{{ url_for('tickets.toggle_billable', ticket_id=ticket.id) }}">
                     <button type="submit" class="btn btn-outline-secondary btn-block">
                         <i class="fas fa-dollar-sign mr-1"></i> Toggle Billable (Current: {{ "Billable" if ticket.billable == "R" else "Non-Billable" }})
                     </button>
@@ -295,7 +295,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="POST" action="{{ url_for('merge_tickets') }}">
+            <form method="POST" action="{{ url_for('tickets.merge_tickets') }}">
                 <div class="modal-body">
                     <p class="text-muted small">This will merge <strong>Ticket #{{ ticket.id }}</strong> into a primary ticket. All notes will be moved, and this ticket will be marked as <strong>Closed</strong> with a consolidation note.</p>
                     

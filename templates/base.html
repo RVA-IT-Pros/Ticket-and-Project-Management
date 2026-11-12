@@ -25,7 +25,7 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="{{ url_for('dashboard') }}" class="nav-link">All Tickets</a>
+        <a href="{{ url_for('tickets.dashboard') }}" class="nav-link">All Tickets</a>
       </li>
     </ul>
 
@@ -34,11 +34,11 @@
       {% if current_user.is_authenticated %}
         {% if current_user.role == 'admin' %}
           <li class="nav-item">
-            <a href="{{ url_for('admin_dashboard') }}" class="nav-link text-danger"><i class="fas fa-user-shield me-1"></i>Admin</a>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link text-danger"><i class="fas fa-user-shield me-1"></i>Admin</a>
           </li>
         {% endif %}
         <li class="nav-item">
-          <a href="{{ url_for('logout') }}" class="nav-link"><i class="fas fa-sign-out-alt me-1"></i>Logout</a>
+          <a href="{{ url_for('auth.logout') }}" class="nav-link"><i class="fas fa-sign-out-alt me-1"></i>Logout</a>
         </li>
       {% endif %}
     </ul>
@@ -48,7 +48,7 @@
   <!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
   <!-- Brand Logo -->
-  <a href="{% if current_user.role == 'client' %}{{ url_for('client_portal') }}{% else %}{{ url_for('dashboard') }}{% endif %}" class="brand-link">
+  <a href="{% if current_user.role == 'client' %}{{ url_for('portal.client_portal') }}{% else %}{{ url_for('tickets.dashboard') }}{% endif %}" class="brand-link">
     {% if BRAND_LOGO_PATH %}
       <img src="{{ BRAND_LOGO_PATH }}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
     {% endif %}
@@ -63,7 +63,7 @@
         <!-- CLIENT SIDEBAR MENU -->
         {% if current_user.role == 'client' %}
           <li class="nav-item">
-            <a href="{{ url_for('client_portal') }}" class="nav-link">
+            <a href="{{ url_for('portal.client_portal') }}" class="nav-link">
               <i class="nav-icon fas fa-ticket-alt"></i>
               <p>My Tickets</p>
             </a>
@@ -72,7 +72,7 @@
         <!-- STAFF & ADMIN SIDEBAR MENU -->
         {% else %}
           <li class="nav-item">
-            <a href="{{ url_for('project_or_regular') }}" class="nav-link bg-success">
+            <a href="{{ url_for('projects.project_or_regular') }}" class="nav-link bg-success">
               <i class="nav-icon fas fa-plus"></i>
               <p>New Ticket</p>
             </a>
@@ -80,66 +80,48 @@
 
           <li class="nav-header">TICKETS & WORK</li>
           <li class="nav-item">
-            <a href="{{ url_for('dashboard') }}" class="nav-link">
+            <a href="{{ url_for('tickets.dashboard') }}" class="nav-link">
               <i class="nav-icon fas fa-list"></i>
               <p>All Open Tickets</p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="{{ url_for('search_tickets') }}" class="nav-link">
+            <a href="{{ url_for('tickets.search_tickets') }}" class="nav-link">
               <i class="nav-icon fas fa-search"></i>
               <p>Search Tickets</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ url_for('random_task') }}" class="nav-link">
-              <i class="nav-icon fas fa-dice"></i>
-              <p>Get Something Done</p>
             </a>
           </li>
 
           <li class="nav-header">MANAGEMENT</li>
           <li class="nav-item">
-            <a href="{{ url_for('projects_home') }}" class="nav-link">
+            <a href="{{ url_for('projects.projects_home') }}" class="nav-link">
               <i class="nav-icon fas fa-project-diagram"></i>
               <p>Projects</p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="{{ url_for('view_company') }}" class="nav-link">
+            <a href="{{ url_for('clients.view_company') }}" class="nav-link">
               <i class="nav-icon fas fa-building"></i>
               <p>Clients & Companies</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ url_for('inventory_dashboard') }}" class="nav-link">
-              <i class="nav-icon fas fa-boxes"></i>
-              <p>Inventory & Assets</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ url_for('calendar') }}" class="nav-link">
-              <i class="nav-icon fas fa-clock"></i>
-              <p>Time Tracking</p>
             </a>
           </li>
 
           {% if current_user.role == 'admin' %}
             <li class="nav-header text-danger">ADMINISTRATIVE</li>
             <li class="nav-item">
-              <a href="{{ url_for('billing_dashboard') }}" class="nav-link">
+              <a href="{{ url_for('billing.billing_dashboard') }}" class="nav-link">
                 <i class="nav-icon fas fa-file-invoice-dollar text-danger"></i>
                 <p>Billing Dashboard</p>
               </a>
             </li>
             <li class="nav-item">
-              <a href="{{ url_for('billing_review_dashboard') }}" class="nav-link">
+              <a href="{{ url_for('billing.billing_review_dashboard') }}" class="nav-link">
                 <i class="nav-icon fas fa-tasks text-warning"></i>
                 <p>Review Non-Billable</p>
               </a>
             </li>
             <li class="nav-item">
-              <a href="{{ url_for('update_tickets') }}" class="nav-link">
+              <a href="{{ url_for('tickets.update_tickets') }}" class="nav-link">
                 <i class="nav-icon fas fa-broom"></i>
                 <p>Clean Up Tickets</p>
               </a>

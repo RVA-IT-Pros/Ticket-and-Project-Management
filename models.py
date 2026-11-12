@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 from flask_login import UserMixin
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from extensions import db
 
 # ---------------------------------------------------------------------------
 # Many-to-Many Association Tables for Access Controls

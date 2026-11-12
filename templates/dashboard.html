@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-<form id="batchAssignForm" method="POST" action="{{ url_for('batch_assign_tech') }}">
+<form id="batchAssignForm" method="POST" action="{{ url_for('tickets.batch_assign_tech') }}">
     <div class="row mb-3 align-items-center">
         <div class="col-md-6">
             <h3 class="m-0 font-weight-bold text-dark">Ticket Board</h3>
@@ -22,10 +22,10 @@
             <button type="button" class="btn btn-info btn-sm mr-2" data-bs-toggle="modal" data-bs-target="#mergeTicketsModal">
                 <i class="fas fa-compress-alt mr-1"></i> Consolidate Tickets
             </button>
-            <a href="{{ url_for('mass_complete_automated_tickets') }}" class="btn btn-warning btn-sm mr-2">
+            <a href="{{ url_for('tickets.mass_complete_automated_tickets') }}" class="btn btn-warning btn-sm mr-2">
                 <i class="fas fa-check-double mr-1"></i> Mass Complete Tickets
             </a>
-            <a href="{{ url_for('download_tickets_excel') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ url_for('tickets.download_tickets_excel') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-file-excel mr-1"></i> Download Open Tickets
             </a>
         </div>
@@ -214,7 +214,7 @@
 
                             <!-- 2. Priority Icon -->
                             <td class="text-center align-middle">
-                                <span class="badge {% if ticket.priority == 'Critical' %}badge-danger{% elif ticket.priority == 'High' %}badge-warning{% elif ticket.priority == 'Medium' %}badge-success{% else %}badge-secondary{% endif %} p-2" onclick="openEditWindow('{{ url_for('edit_ticket', id=ticket.id) }}')" style="cursor: pointer; border-radius: 50%;">
+                                <span class="badge {% if ticket.priority == 'Critical' %}badge-danger{% elif ticket.priority == 'High' %}badge-warning{% elif ticket.priority == 'Medium' %}badge-success{% else %}badge-secondary{% endif %} p-2" onclick="openEditWindow('{{ url_for('tickets.edit_ticket', id=ticket.id) }}')" style="cursor: pointer; border-radius: 50%;">
                                     <i class="fas {% if ticket.status == 'Closed' or ticket.status == 'Completed' %}fa-check{% else %}fa-info-circle{% endif %}"></i>
                                 </span>
                             </td>
@@ -292,7 +292,7 @@
 
                             <!-- 7. Action Button -->
                             <td class="align-middle text-center btn-view">
-                                <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-sm">
+                                <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}" class="btn btn-info btn-sm">
                                     <i class="fas fa-eye mr-1"></i> View
                                 </a>
                             </td>
@@ -315,7 +315,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="POST" action="{{ url_for('merge_tickets') }}">
+            <form method="POST" action="{{ url_for('tickets.merge_tickets') }}">
                 <div class="modal-body">
                     <p class="text-muted small">Select the ticket to merge (source) and the primary ticket to merge into (target). All notes will be transferred, and the source ticket will be marked as <strong>Closed</strong> with a consolidation note.</p>
                     
@@ -529,7 +529,7 @@
     function searchTicket() {
         const input = document.getElementById("ticketSearchInput").value.trim();
         if (!input) return;
-        window.location.href = "{{ url_for('search_tickets') }}?q=" + encodeURIComponent(input);
+        window.location.href = "{{ url_for('tickets.search_tickets') }}?q=" + encodeURIComponent(input);
     }
 
     function updateTicketCounts() {

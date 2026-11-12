@@ -9,7 +9,7 @@
             <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-history text-info mr-2"></i>Invoice History & GL Review</h2>
         </div>
         <div class="col-md-6 text-md-right mt-2 mt-md-0">
-            <a href="{{ url_for('billing_dashboard') }}" class="btn btn-primary btn-sm">
+            <a href="{{ url_for('billing.billing_dashboard') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Back to Billing Dashboard
             </a>
         </div>
@@ -50,7 +50,7 @@
                                                 <td class="align-middle">{{ t.subject }}</td>
                                                 <td class="align-middle font-weight-bold">{{ t.hours }} hrs</td>
                                                 <td class="align-middle">
-                                                    <a href="{{ url_for('view_ticket', id=t.id) }}" class="btn btn-outline-info btn-xs" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">View Ticket</a>
+                                                    <a href="{{ url_for('tickets.view_ticket', id=t.id) }}" class="btn btn-outline-info btn-xs">View Ticket</a>
                                                 </td>
                                             </tr>
                                         {% endfor %}

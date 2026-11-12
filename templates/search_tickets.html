@@ -6,7 +6,7 @@
 <div class="container-fluid pt-2">
     <div class="card card-outline card-primary shadow-sm mb-4">
         <div class="card-header bg-white">
-            <form method="get" action="{{ url_for('search_tickets') }}" class="d-flex gap-2">
+            <form method="get" action="{{ url_for('tickets.search_tickets') }}" class="d-flex gap-2">
                 <input class="form-control mr-2" type="search" name="q" placeholder="Search ID, subject, description, client, company, or note..." value="{{ q or '' }}" autofocus>
                 <button class="btn btn-primary font-weight-bold px-4" type="submit">
                     <i class="fas fa-search mr-1"></i> Search
@@ -37,10 +37,10 @@
                                 </div>
                             </div>
                             <div>
-                                <a href="{{ url_for('view_ticket', id=t.id) }}" class="btn btn-info btn-xs mr-1" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">
+                                <a href="{{ url_for('tickets.view_ticket', id=t.id) }}" class="btn btn-info btn-xs mr-1">
                                     <i class="fas fa-eye mr-1"></i> View
                                 </a>
-                                <a href="{{ url_for('edit_ticket', id=t.id) }}" class="btn btn-warning btn-xs" onclick="window.open(this.href, 'editTicketWindow', 'width=800,height=600,resizable=no,scrollbars=yes,status=yes'); return false;">
+                                <a href="{{ url_for('tickets.edit_ticket', id=t.id) }}" class="btn btn-warning btn-xs">
                                     <i class="fas fa-edit mr-1"></i> Edit
                                 </a>
                             </div>

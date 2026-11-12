@@ -12,10 +12,10 @@
                 <p class="text-muted mb-4">Choose whether this new ticket should be linked directly to an active project.</p>
 
                 <div class="d-flex justify-content-center gap-3">
-                    <a href="{{ url_for('select_project_new_ticket') }}" class="btn btn-success btn-lg font-weight-bold px-4 mr-2">
+                    <a href="{{ url_for('projects.select_project_new_ticket') }}" class="btn btn-success btn-lg font-weight-bold px-4 mr-2">
                         <i class="fas fa-check mr-1"></i> Yes
                     </a>
-                    <a href="{{ url_for('new_ticket') }}" class="btn btn-secondary btn-lg font-weight-bold px-4">
+                    <a href="{{ url_for('tickets.new_ticket') }}" class="btn btn-secondary btn-lg font-weight-bold px-4">
                         <i class="fas fa-times mr-1"></i> No
                     </a>
                 </div>
