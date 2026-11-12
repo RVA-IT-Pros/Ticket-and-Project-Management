@@ -21,7 +21,7 @@
     <body>
         <nav class="navbar navbar-dark navbar-custom">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url_for('client_portal') }}">
+                <a class="navbar-brand" href="{{ url_for('portal.client_portal') }}">
                     {% if BRAND_LOGO_PATH %}
                     <img src="{{ BRAND_LOGO_PATH }}" alt="Logo" style="height: 40px; margin-right: 15px; border-radius: 5px;" />
                     {% endif %}
@@ -29,7 +29,7 @@
                 </a>
                 <div class="d-flex text-white align-items-center">
                     <span class="me-3">Welcome, {{ current_user.client.first_name if current_user.client else current_user.username }}</span>
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
                 </div>
             </div>
         </nav>
@@ -55,7 +55,7 @@
                 </div>
                 <div class="list-group list-group-flush">
                     {% for project in projects %}
-                    <a href="{{ url_for('portal_view_project', project_id=project.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                    <a href="{{ url_for('portal.portal_view_project', project_id=project.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
                         <div>
                             <h6 class="mb-1 text-primary fw-bold">{{ project.name }}</h6>
                             <small class="text-muted">{{ project.description or 'No description provided.' }}</small>
@@ -74,7 +74,7 @@
                     <span class="badge bg-primary px-3 py-2 fs-6 fw-bold shadow-sm" id="portalTicketCount">0 Tickets</span>
                     <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-bold shadow-sm d-none" id="portalSelectedCount">0 Selected</span>
                 </div>
-                <a href="{{ url_for('portal_new_ticket') }}" class="btn btn-success">
+                <a href="{{ url_for('portal.portal_new_ticket') }}" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i> Create New Ticket
                 </a>
             </div>
@@ -137,7 +137,7 @@
                             <td>{{ ticket.created_at.strftime('%b %d, %Y') if ticket.created_at else 'N/A' }}</td>
                             <td>{{ ticket.updated_at.strftime('%b %d, %Y') if ticket.updated_at else 'N/A' }}</td>
                             <td class="text-end">
-                                <a href="{{ url_for('portal_view_ticket', id=ticket.id) }}" class="btn btn-outline-primary btn-sm">
+                                <a href="{{ url_for('portal.portal_view_ticket', id=ticket.id) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye me-1"></i> View Details
                                 </a>
                             </td>

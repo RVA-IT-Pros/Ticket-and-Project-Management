@@ -132,7 +132,7 @@
         $('#client_id').change(function() {
             var clientId = $(this).val();
             $.ajax({
-                url: "{{ url_for('get_client_email') }}",
+                url: "{{ url_for('clients.get_client_email') }}",
                 type: 'GET',
                 data: { client_id: clientId },
                 success: function(response) {

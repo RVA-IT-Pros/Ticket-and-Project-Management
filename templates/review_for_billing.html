@@ -9,7 +9,7 @@
             <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-tasks text-warning mr-2"></i>Review Non-Billable Tickets</h2>
         </div>
         <div class="col-md-6 text-md-right mt-2 mt-md-0">
-            <a href="{{ url_for('billing_dashboard') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ url_for('billing.billing_dashboard') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Back to Billing Dashboard
             </a>
         </div>
@@ -71,11 +71,11 @@
                                     <td class="align-middle font-weight-bold">{{ (ticket_totals[ticket.id] / 60) | round(2) }} hrs</td>
                                     <td class="align-middle small">{{ ticket.project.name if ticket.project else 'N/A' }}</td>
                                     <td class="align-middle">
-                                        <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-xs mr-1" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">View</a>
-                                        <form method="POST" action="{{ url_for('toggle_billable_reviewed', ticket_id=ticket.id) }}" class="d-inline">
+                                        <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}" class="btn btn-info btn-xs mr-1">View</a>
+                                        <form method="POST" action="{{ url_for('billing.toggle_billable_reviewed', ticket_id=ticket.id) }}" class="d-inline">
                                             <button type="submit" class="btn btn-success btn-xs font-weight-bold">Make Billable</button>
                                         </form>
-                                        <form method="POST" action="{{ url_for('mark_reviewed_nonbillable', ticket_id=ticket.id) }}" class="d-inline">
+                                        <form method="POST" action="{{ url_for('billing.mark_reviewed_nonbillable', ticket_id=ticket.id) }}" class="d-inline">
                                             <button type="submit" class="btn btn-secondary btn-xs">Dismiss</button>
                                         </form>
                                     </td>

@@ -9,10 +9,10 @@
             <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-file-invoice-dollar text-danger mr-2"></i>Billing Dashboard</h2>
         </div>
         <div class="col-md-6 text-md-right mt-2 mt-md-0">
-            <a href="{{ url_for('billing_review_dashboard') }}" class="btn btn-warning btn-sm mr-2">
+            <a href="{{ url_for('billing.billing_review_dashboard') }}" class="btn btn-warning btn-sm mr-2">
                 <i class="fas fa-tasks mr-1"></i> Review Non-Billable
             </a>
-            <a href="{{ url_for('invoice_history') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ url_for('billing.invoice_history') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-history mr-1"></i> View Invoice History
             </a>
         </div>
@@ -43,7 +43,7 @@
 
     <!-- Tickets Table Card -->
     {% if tickets %}
-        <form method="POST" action="{{ url_for('batch_push_qbo') }}">
+        <form method="POST" action="{{ url_for('billing.batch_push_qbo') }}">
             <div class="card card-outline card-success shadow-sm mb-4">
                 <div class="card-header bg-white d-flex align-items-center justify-content-between">
                     <h5 class="card-title font-weight-bold m-0 text-dark">Billable Tickets Ready for Invoicing</h5>
@@ -90,14 +90,14 @@
                                         <td class="align-middle">{{ ticket.estimated_hours }}</td>
                                         <td class="align-middle font-weight-bold text-primary">{{ ticket_totals[ticket.id] | round(2) }}</td>
                                         <td class="align-middle">
-                                            <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-info btn-xs" onclick="window.open(this.href, 'viewTicketWindow', 'width=1751,height=800,resizable=no,scrollbars=yes,status=yes'); return false;">View</a>
+                                            <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}" class="btn btn-info btn-xs">View</a>
                                         </td>
                                         <td class="align-middle">
-                                            <button type="submit" formaction="{{ url_for('toggle_invoiced', ticket_id=ticket.id) }}" class="btn btn-xs btn-outline-secondary btn-block mb-1">
+                                            <button type="submit" formaction="{{ url_for('billing.toggle_invoiced', ticket_id=ticket.id) }}" class="btn btn-xs btn-outline-secondary btn-block mb-1">
                                                 {% if ticket.billable == "I" %} Unmark Invoiced {% else %} Mark Invoiced (Manual) {% endif %}
                                             </button>
                                             {% if ticket.billable == "R" %}
-                                                <button type="submit" formaction="{{ url_for('push_invoice_to_qbo', ticket_id=ticket.id) }}" class="btn btn-xs btn-success btn-block font-weight-bold">
+                                                <button type="submit" formaction="{{ url_for('billing.push_invoice_to_qbo', ticket_id=ticket.id) }}" class="btn btn-xs btn-success btn-block font-weight-bold">
                                                     Push Single to QBO
                                                 </button>
                                             {% endif %}

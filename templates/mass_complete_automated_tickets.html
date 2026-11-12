@@ -9,7 +9,7 @@
             <h2 class="m-0 font-weight-bold text-dark"><i class="fas fa-check-double text-success mr-2"></i>Mass Complete Automated Tickets</h2>
         </div>
         <div class="col-md-4 text-md-right mt-2 mt-md-0">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ url_for('tickets.dashboard') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
             </a>
         </div>
@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="card-footer bg-white text-right">
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mr-2">Cancel</a>
+                    <a href="{{ url_for('tickets.dashboard') }}" class="btn btn-secondary mr-2">Cancel</a>
                     <button type="submit" class="btn btn-success font-weight-bold" onclick="return confirm('Are you sure you want to complete the selected tickets? This action cannot be undone.')">
                         <i class="fas fa-check mr-1"></i> Complete Selected Tickets
                     </button>
