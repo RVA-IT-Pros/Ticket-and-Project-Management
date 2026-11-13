@@ -4,7 +4,6 @@ import pickle
 from email import message_from_bytes
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
-from flask import Flask
 from models import db, Ticket, Client, User  # Added User import
 from config import Config
 from gmail_send import send_gmail_message

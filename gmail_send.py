@@ -1,11 +1,8 @@
-import os
 import base64
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from email.header import Header
 from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 from config import Config
 import pickle
 

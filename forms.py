@@ -23,7 +23,6 @@ from wtforms.validators import (
     Optional,
 )
 
-from models import Project
 
 
 class RegistrationForm(FlaskForm):
@@ -269,20 +268,6 @@ class EditCompanyForm(FlaskForm):
     submit = SubmitField("Update Company")
 
 
-# Form for editing a client (employee)
-class EditClientForm(FlaskForm):
-    first_name = StringField(
-        "First Name", validators=[InputRequired(), Length(max=100)]
-    )
-    last_name = StringField("Last Name", validators=[InputRequired(), Length(max=100)])
-    email = StringField("Email", validators=[InputRequired(), Email(), Length(max=150)])
-    phone = StringField("Phone", validators=[Optional(), Length(max=20)])
-    password = PasswordField(
-        "Portal Password (Leave blank for no portal access)",
-        validators=[Optional(), Length(min=6, max=20)],
-    )
-    submit = SubmitField("Update Client")
-
 
 class ChangeRoleForm(FlaskForm):
     user_id = HiddenField("User ID", validators=[InputRequired()])
@@ -320,57 +305,3 @@ class UpdateProjectForm(FlaskForm):
     )
     company_id = SelectField("Company", coerce=int, validators=[DataRequired()])
     submit = SubmitField("Update Project")
-
-
-class UpdatePhaseForm(FlaskForm):
-    name = StringField("Phase Name", validators=[InputRequired()])
-    project_id = StringField("Project")  # Dynamically populated
-    status = SelectField(
-        "Status",
-        choices=[
-            ("Open", "Open"),
-            ("In Progress", "In Progress"),
-            ("On Hold", "On Hold"),
-            ("Closed", "Closed"),
-        ],
-        validators=[InputRequired()],
-    )
-    submit = SubmitField("Update Phase")
-
-
-class RandomNumberForm(FlaskForm):
-    number = IntegerField("Range", validators=[InputRequired()])
-    submit = SubmitField("Get Number")
-
-
-class AddBulkInventoryForm(FlaskForm):
-    item_name = StringField("Item Name", validators=[DataRequired()])
-    sku = StringField("SKU / Model Number", validators=[Optional()])
-    qty_in_stock = IntegerField("Quantity to Add", validators=[DataRequired()])
-    landed_unit_cost = FloatField(
-        "Landed Unit Cost (Your Cost)", validators=[DataRequired()]
-    )
-    retail_unit_price = FloatField(
-        "Retail Unit Price (Client Cost)", validators=[DataRequired()]
-    )
-    low_stock_threshold = IntegerField("Low Stock Alert Threshold", default=5)
-    submit = SubmitField("Add to Inventory")
-
-
-class AddDeployedAssetForm(FlaskForm):
-    company_id = SelectField(
-        "Assign to Company", coerce=int, validators=[DataRequired()]
-    )
-    model_name = StringField("Model / Asset Name", validators=[DataRequired()])
-    serial_number = StringField("Serial Number", validators=[Optional()])
-    purchase_cost = FloatField("Fully Burdened Cost", validators=[DataRequired()])
-    status = SelectField(
-        "Status",
-        choices=[
-            ("Staged", "Staged (Internal)"),
-            ("Deployed", "Deployed (Active)"),
-            ("Decommissioned", "Decommissioned"),
-        ],
-        default="Staged",
-    )
-    submit = SubmitField("Log Asset")
