@@ -2,11 +2,10 @@ from datetime import datetime
 from io import BytesIO
 import markdown
 import pandas as pd
-import pymysql
 from dateutil import parser
 from pytz import UTC, timezone
 from sqlalchemy import or_
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import text
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, send_file
 from flask_login import login_required, current_user
 
@@ -143,38 +142,6 @@ def send_note_email(requestor_email, ticket, note):
     </html>
     """
     send_gmail_message(to=requestor_email, subject=subject, html_body=body)
-
-
-def execute_query(query, params=None):
-    """Helper function to execute a raw maintenance query on MySQL."""
-    conn = None
-    try:
-        conn = pymysql.connect(
-            host=Config.DB_HOST,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD,
-            database=Config.DB_NAME,
-            cursorclass=pymysql.cursors.DictCursor,
-            connect_timeout=30,
-            autocommit=True,
-        )
-        cursor = conn.cursor()
-        if params:
-            cursor.execute(query, params)
-        else:
-            cursor.execute(query)
-        conn.commit()
-        return {
-            "success": True,
-            "message": "Query executed successfully",
-            "affected_rows": cursor.rowcount,
-        }
-    except (pymysql.OperationalError, pymysql.InterfaceError) as e:
-        print(f"Lost connection to MySQL: {e}")
-        return {"success": False, "message": str(e)}
-    finally:
-        if conn:
-            conn.close()
 
 
 @tickets_bp.route("/")
@@ -740,34 +707,56 @@ def complete_ticket(id):
 @login_required
 def update_tickets():
     today = datetime.now().strftime("%Y-%m-%d 00:00:00")
-    queries = [
-        {
-            "query": """UPDATE ticket
-                        SET due_date = %s
-                        WHERE due_date < %s
-                        AND status NOT IN ('Closed', 'On Hold');""",
-            "params": (today, today),
-        },
-        {
-            "query": """UPDATE ticket
-                        SET due_date = NULL
-                        WHERE status = 'On Hold';""",
-            "params": None,
-        },
-        {
-            "query": """UPDATE ticket
-                        SET status = 'In Progress'
-                        WHERE status = 'Touched';""",
-            "params": None,
-        },
-        {
-            "query": """UPDATE ticket
-                        SET completed_at = NULL, complete = 0
-                        WHERE status <> 'Closed' AND completed_at IS NOT NULL AND complete = 1;""",
-            "params": None,
-        },
+    statements = [
+        (
+            "Overdue open tickets moved to today",
+            text("""
+                UPDATE ticket
+                SET due_date = :today
+                WHERE due_date < :today
+                  AND status NOT IN ('Closed', 'On Hold')
+            """),
+            {"today": today},
+        ),
+        (
+            "On-hold tickets cleared of due dates",
+            text("UPDATE ticket SET due_date = NULL WHERE status = 'On Hold'"),
+            {},
+        ),
+        (
+            "Touched tickets moved to In Progress",
+            text("UPDATE ticket SET status = 'In Progress' WHERE status = 'Touched'"),
+            {},
+        ),
+        (
+            "Reopened tickets cleared of completion flags",
+            text("""
+                UPDATE ticket
+                SET completed_at = NULL, complete = 0
+                WHERE status <> 'Closed'
+                  AND completed_at IS NOT NULL
+                  AND complete = 1
+            """),
+            {},
+        ),
     ]
-    results = [execute_query(q["query"], q["params"] or ()) for q in queries]
+
+    results = []
+    for label, stmt, params in statements:
+        try:
+            res = db.session.execute(stmt, params)
+            results.append({
+                "success": True,
+                "message": f"{label}: {res.rowcount} row(s) updated.",
+            })
+        except Exception as e:
+            db.session.rollback()
+            results.append({
+                "success": False,
+                "message": f"{label} failed: {str(e)}",
+            })
+
+    db.session.commit()
     return render_template("clean_up_tickets.html", results=results)
 
 

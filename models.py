@@ -175,30 +175,3 @@ class TicketNote(db.Model):
 
     user = db.relationship("User", foreign_keys=[user_id])
 
-
-# ---------------------------------------------------------------------------
-# Inventory & Asset Tracking Models
-# ---------------------------------------------------------------------------
-class BulkInventory(db.Model):
-    __tablename__ = "bulk_inventory"
-
-    id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(150), nullable=False)
-    sku = db.Column(db.String(100), unique=True, nullable=True)
-    qty_in_stock = db.Column(db.Integer, default=0)
-    landed_unit_cost = db.Column(db.Float, default=0.0)
-    retail_unit_price = db.Column(db.Float, default=0.0)
-    low_stock_threshold = db.Column(db.Integer, default=5)
-
-
-class DeployedAsset(db.Model):
-    __tablename__ = "deployed_asset"
-
-    id = db.Column(db.Integer, primary_key=True)
-    model_name = db.Column(db.String(150), nullable=False)
-    serial_number = db.Column(db.String(100), unique=True, nullable=True)
-    purchase_cost = db.Column(db.Float, default=0.0)
-    status = db.Column(db.String(50), default="Deployed")
-
-    company_id = db.Column(db.Integer, db.ForeignKey("company.id"), nullable=False)
-    company = db.relationship("Company", backref="assets")
